@@ -142,19 +142,11 @@ singletons [d|
   |]
 
 natToZ :: Sing n -> Sing (Pos n)
-natToZ sing =
-  case fromSing sing of
-    n -> case toSing (Pos n) of
-      SomeSing sing' -> unsafeCoerce sing'
+natToZ SZ = SPos SZ
+natToZ (SS n) = SPos (SS n)
 
 zToNat :: Sing (Pos n) -> Sing n
-zToNat sing =
-  case fromSing sing of
-    Pos n -> case toSing n of
-      SomeSing sing' -> unsafeCoerce sing'
+zToNat (SPos n) = n
 
 zToNatNeg :: Sing (Neg n) -> Sing n
-zToNatNeg sing =
-  case fromSing sing of
-    Neg n -> case toSing n of
-      SomeSing sing' -> unsafeCoerce sing'
+zToNatNeg (SNeg n) = n
