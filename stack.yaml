@@ -43,7 +43,8 @@ extra-deps:
   - ghc-typelits-presburger-0.2.0.5
   - equational-reasoning-0.6.0.0
   - singletons-2.4.1
-  - type-natural-0.8.2.0
+  - git: https://github.com/serokell/type-natural.git
+    commit: 56c4a5c401a791a0b02bfa3fdf099e61ed578d51
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

@@ -111,7 +111,6 @@ plusAssoc (SPos SZ) (SPos (SS n)) (SPos SZ) = Refl
 plusAssoc (SPos SZ) (SPos (SS n)) (SPos (SS p)) = Refl
 plusAssoc (SPos (SS n)) (SPos SZ) (SPos SZ) = undefined
 plusAssoc m n p = undefined
-
 -- TODO: finalise this proof
 
 -- Order
