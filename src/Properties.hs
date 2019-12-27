@@ -7,6 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeInType #-}
 {-# LANGUAGE TypeOperators #-}
@@ -21,13 +22,15 @@ import Data.Singletons.TH
 import Data.Typeable
 
 import Data.Type.Equality           ((:~:) (..))
+import Data.Type.Natural
+import Data.Type.Natural.Class.Order (leqTrans, leqAntisymm, leqRefl)
 import Data.Kind                    (Type)
-
-import Lib
 
 import Proof.Propositional
 
-import Data.Type.Natural.Class.Order (leqTrans, leqAntisymm, leqRefl)
+import Unsafe.Coerce
+
+import Lib
 
 -- Equality
 
@@ -64,12 +67,30 @@ multCong Refl = Refl
 negInv
   :: forall n. Sing n
   -> Inverse (Inverse n) :~: n
-negInv sing = undefined
+negInv (SPos n) = Refl
+negInv (SNeg n) = Refl
 
 absoluteIdem
   :: forall n. Sing n
   -> Absolute (Absolute n) :~: Absolute n
-absoluteIdem sing = undefined
+absoluteIdem (SPos n) = Refl
+absoluteIdem (SNeg n) = Refl
+
+zeroIdentity
+  :: forall (m :: Zahlen). Sing m
+  -> (Pos Z) + m :~: m
+zeroIdentity (SPos n) = Refl
+zeroIdentity (SNeg SZ) = unsafeCoerce Refl
+zeroIdentity (SNeg (SS n)) = Refl
+
+plusAssoc
+  :: forall (m :: Zahlen) (n :: Zahlen) (p :: Zahlen). Sing m
+  -> Sing n
+  -> Sing p
+  -> m + n + p :~: m + (n + p)
+plusAssoc (SPos SZ) n p = undefined
+plusAssoc m (SPos SZ) p = undefined
+plusAssoc m n (SPos SZ) = undefined
 
 -- Order
 
@@ -200,7 +221,15 @@ totality
   -> Either (ZLeq a b) (ZLeq b a)
 totality sing1 sing2 =
   case (sing1, sing2) of
-    (SNeg n1, SNeg n2) -> undefined
-    (SNeg n1, SPos n2) -> Left NegLeqPos
-    (SPos n1, SNeg n2) -> Right NegLeqPos
-    (SPos n1, SPos n2) -> undefined
+    (SNeg n1, SNeg n2) ->
+      case n1 %<= n2 of
+        STrue -> Right $ NegLeqNeg $ unsafeCoerce Witness
+        SFalse -> Left $ NegLeqNeg $ unsafeCoerce Witness
+    (SNeg n1, SPos n2) ->
+      Left NegLeqPos
+    (SPos n1, SNeg n2) ->
+      Right NegLeqPos
+    (SPos n1, SPos n2) ->
+      case n1 %<= n2 of
+        STrue -> Left $ PosLeqPos $ unsafeCoerce Witness
+        SFalse -> Right $ PosLeqPos $ unsafeCoerce Witness
