@@ -23,6 +23,7 @@ import Data.Typeable
 
 import Data.Type.Equality           ((:~:) (..))
 import Data.Type.Natural
+import Data.Type.Natural.Class.Arithmetic
 import Data.Type.Natural.Class.Order (leqTrans, leqAntisymm, leqRefl)
 import Data.Kind                    (Type)
 
@@ -59,6 +60,14 @@ plusCong
   -> n + p :~: m + p
 plusCong Refl = Refl
 
+plusCong'
+  :: forall (n :: Nat) (m :: Nat) (p :: Nat). Sing n
+  -> Sing m
+  -> Sing p
+  -> n + m :~: p
+  -> Pos n + Pos m :~: Pos p
+plusCong' n m p Refl = Refl
+
 multCong
   :: forall (n :: Zahlen) (m :: Zahlen) (p :: Zahlen). n :~: m
   -> n * p :~: m * p
@@ -83,14 +92,27 @@ zeroIdentity (SPos n) = Refl
 zeroIdentity (SNeg SZ) = unsafeCoerce Refl
 zeroIdentity (SNeg (SS n)) = Refl
 
+zeroIdentityR
+  :: forall (m :: Zahlen). Sing m
+  -> m + (Pos Z) :~: m
+zeroIdentityR (SPos SZ) = Refl
+zeroIdentityR (SPos (SS n)) =
+  plusCong' (SS n) (SZ) (SS n) (plusZeroR (SS n))
+zeroIdentityR (SNeg SZ) = unsafeCoerce Refl
+zeroIdentityR (SNeg (SS n)) = Refl
+
 plusAssoc
   :: forall (m :: Zahlen) (n :: Zahlen) (p :: Zahlen). Sing m
   -> Sing n
   -> Sing p
   -> m + n + p :~: m + (n + p)
-plusAssoc (SPos SZ) n p = undefined
-plusAssoc m (SPos SZ) p = undefined
-plusAssoc m n (SPos SZ) = undefined
+plusAssoc (SPos SZ) (SPos SZ) (SPos SZ) = Refl
+plusAssoc (SPos SZ) (SPos (SS n)) (SPos SZ) = Refl
+plusAssoc (SPos SZ) (SPos (SS n)) (SPos (SS p)) = Refl
+plusAssoc (SPos (SS n)) (SPos SZ) (SPos SZ) = undefined
+plusAssoc m n p = undefined
+
+-- TODO: finalise this proof
 
 -- Order
 
