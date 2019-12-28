@@ -15,7 +15,7 @@
 
 module Properties where
 
-import Data.Promotion.Prelude.Enum
+--import Data.Promotion.Prelude.Enum
 import Data.Singletons.Prelude
 import Data.Singletons.Prelude.Enum
 import Data.Singletons.TH

@@ -17,7 +17,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-12.21
+resolver: lts-14.18
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -40,11 +40,16 @@ packages:
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
 extra-deps:
-  - ghc-typelits-presburger-0.2.0.5
-  - equational-reasoning-0.6.0.0
-  - singletons-2.4.1
-  - git: https://github.com/serokell/type-natural.git
-    commit: 56c4a5c401a791a0b02bfa3fdf099e61ed578d51
+  - git: https://github.com/konn/type-natural
+    commit: 00265e5506bbfdb83bd3c8b7aa52ac19af3b21f5
+
+  - git: https://github.com/serokell/ghc-typelits-presburger
+    commit: 885948ce2c7e74bc62166ddcba83d52b93509577
+  - git: https://github.com/konn/presburger
+    commit: e8fac46c74fff9dc7eae56b960c968ccf7cf0e33
+  - git: https://github.com/konn/equational-reasoning-in-haskell.git
+    commit: b490b45416ad1037433cdabbb1da436f862c0acd
+  - singletons-2.5.1
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
