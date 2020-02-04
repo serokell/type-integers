@@ -29,8 +29,6 @@ library
   exposed-modules:
       Lib
       Properties
-  other-modules:
-      Paths_type_integers
   hs-source-dirs:
       src
   build-depends:
