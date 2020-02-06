@@ -155,7 +155,7 @@ singletons [d|
 class IsCommutativeRing z where
   type Zero' :: z
   type One' :: z
-  type Inv :: z -> z
+  type Inv (m :: z) :: z
 
   oneIsNotZero :: One' :~: Zero' -> Void
   associativity
@@ -183,7 +183,9 @@ class IsCommutativeRing z where
     -> (x + Inv x) :~: Zero'
 
 instance IsCommutativeRing Zahlen where
-   type Zero' = ('Pos 'Z)
+  type Zero' = ('Pos 'Z)
+  type One' = ('Pos (S Z))
+  type Inv m = Inverse m
 --   zeroIdentity :: forall x m. Absolute'' x :~: 'Z -> x + m :~: m
 --   zeroIdentity Refl = Refl `because` (Proxy )
 
