@@ -11,6 +11,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeInType #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE NoStarIsType #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Properties where
@@ -70,7 +71,7 @@ plusCong' n m p Refl = Refl
 
 multCong
   :: forall (n :: Zahlen) (m :: Zahlen) (p :: Zahlen). n :~: m
-  -> n * p :~: m * p
+  -> (n * p) :~: (m * p)
 multCong Refl = Refl
 
 negInv

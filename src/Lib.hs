@@ -1,4 +1,6 @@
+--{-# OPTIONS_GHC -ddump-splices #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE AllowAmbiguousTypes#-}
 {-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE InstanceSigs #-}
@@ -7,7 +9,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeInType #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE MultiParamTypeClasses#-}
+{-# LANGUAGE NoStarIsType #-}
+{-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 
@@ -19,16 +25,19 @@ import Data.Singletons.Prelude
 import Data.Singletons.Prelude.Enum
 import Data.Singletons.TH
 import Data.Typeable
+import Data.Type.Equality 
 
 import Unsafe.Coerce
+
+import Data.Kind                    (Type, Constraint)
 
 singletons [d|
   data Zahlen = Pos Nat | Neg Nat
     deriving (Show, Eq)
   |]
 
-deriving instance Typeable 'Pos
 deriving instance Typeable 'Neg
+deriving instance Typeable 'Pos
 
 singletons [d|
   data Sign = P | N
@@ -70,6 +79,7 @@ singletons [d|
   |]
 
 singletons [d|
+
   absolute'
     :: Zahlen
     -> Nat
@@ -141,6 +151,29 @@ singletons [d|
         True -> Pos $ fromInteger n
         False -> Neg $ fromInteger n
   |]
+
+class IsInteger z where
+  type Signum (m :: z) :: Sign  
+  type Absolute'' (m :: z) :: Nat
+  {-
+  type Zero' :: int
+  type One' :: int
+  -} 
+  zeroEquality :: (Absolute'' x ~ Absolute'' y, Absolute'' x ~ 'Z) => x :~: y 
+  zeroEquality = unsafeCoerce Refl
+  zeroEquality' :: Absolute'' x :~: Absolute'' y -> Absolute'' x :~: 'Z -> x :~: y
+  zeroEquality' Refl Refl = unsafeCoerce Refl
+  zeroIdentity :: forall x m. Absolute'' x :~: 'Z -> x + m :~: m
+--  zeroIdentity = Refl
+  --oneIsNotZero :: One' :~: Zero' -> Void
+
+instance IsInteger Zahlen where
+   type Signum ('Pos m) = P
+   type Signum ('Neg m) = N
+   type Absolute'' (_ m) = m
+--   zeroIdentity :: forall x m. Absolute'' x :~: 'Z -> x + m :~: m
+--   zeroIdentity Refl = Refl `because` (Proxy )
+
 
 natToZ :: Sing n -> Sing (Pos n)
 natToZ SZ = SPos SZ
