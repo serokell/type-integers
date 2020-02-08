@@ -22,12 +22,13 @@ import Data.Singletons.Prelude.Enum
 import Data.Singletons.TH
 import Data.Typeable
 
-import Data.Type.Equality           ((:~:) (..))
+import Data.Type.Equality
 import Data.Type.Natural
 import Data.Type.Natural.Class.Arithmetic
 import Data.Type.Natural.Class.Order (leqTrans, leqAntisymm, leqRefl)
 import Data.Kind                    (Type)
 
+import Proof.Equational
 import Proof.Propositional
 
 import Unsafe.Coerce
@@ -56,10 +57,21 @@ negInjective
   -> n :~: m
 negInjective Refl = Refl
 
-plusCong
-  :: forall (n :: Zahlen) (m :: Zahlen) (p :: Zahlen). n :~: m
+plusCongruence
+  :: forall (n :: Zahlen) (m :: Zahlen) (p :: Zahlen). Sing n
+  -> Sing m
+  -> Sing p
+  -> n :~: m
   -> n + p :~: m + p
-plusCong Refl = Refl
+plusCongruence n m p Refl = Refl
+
+plusCongruenceR
+  :: forall (m :: Zahlen) (n :: Zahlen) (p :: Zahlen). Sing m
+  -> Sing n
+  -> Sing p
+  -> n :~: p
+  -> m + n :~: m + p
+plusCongruenceR m n p Refl = Refl
 
 plusCong'
   :: forall (n :: Nat) (m :: Nat) (p :: Nat). Sing n
@@ -88,30 +100,73 @@ absoluteIdem (SNeg n) = Refl
 
 zeroIdentity
   :: forall (m :: Zahlen). Sing m
-  -> (Pos Z) + m :~: m
+  -> Pos Z + m :~: m
 zeroIdentity (SPos n) = Refl
 zeroIdentity (SNeg SZ) = unsafeCoerce Refl
 zeroIdentity (SNeg (SS n)) = Refl
 
 zeroIdentityR
   :: forall (m :: Zahlen). Sing m
-  -> m + (Pos Z) :~: m
+  -> m + Pos Z :~: m
 zeroIdentityR (SPos SZ) = Refl
 zeroIdentityR (SPos (SS n)) =
-  plusCong' (SS n) (SZ) (SS n) (plusZeroR (SS n))
+  plusCong' (SS n) SZ (SS n) (plusZeroR (SS n))
 zeroIdentityR (SNeg SZ) = unsafeCoerce Refl
 zeroIdentityR (SNeg (SS n)) = Refl
 
-plusAssoc
+distrSub
+  :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
+  -> Sing n
+  -> Sing p
+  -> (Sub n p + Pos m) :~: Sub (n + m) p
+distrSub _ SZ SZ = Refl
+distrSub _ SZ (SS p) = Refl
+distrSub _ (SS n) SZ = Refl
+distrSub m (SS n) (SS p) = distrSub m n p
+
+distrSubR
+  :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
+  -> Sing n
+  -> Sing p
+  -> Pos m + Sub n p :~: Sub (m + n) p
+distrSubR = undefined
+
+plusAssocZ
   :: forall (m :: Zahlen) (n :: Zahlen) (p :: Zahlen). Sing m
   -> Sing n
   -> Sing p
-  -> m + n + p :~: m + (n + p)
-plusAssoc (SPos SZ) (SPos SZ) (SPos SZ) = Refl
-plusAssoc (SPos SZ) (SPos (SS n)) (SPos SZ) = Refl
-plusAssoc (SPos SZ) (SPos (SS n)) (SPos (SS p)) = Refl
-plusAssoc (SPos (SS n)) (SPos SZ) (SPos SZ) = undefined
-plusAssoc m n p = undefined
+  -> ((m + n) + p) :~: (m + (n + p))
+plusAssocZ (SPos SZ) n p =
+  start ((SPos SZ %+ n) %+ p)
+  === (n %+ p) `because` plusCongruence (SPos SZ %+ n) n p (zeroIdentity n)
+  === (SPos SZ %+ (n %+ p)) `because` sym (zeroIdentity (n %+ p))
+plusAssocZ m (SPos SZ) p =
+  start ((m %+ SPos SZ) %+ p)
+  === (m %+ p) `because` plusCongruence (m %+ SPos SZ) m p (zeroIdentityR m)
+  === (m %+ (SPos SZ %+ p)) `because` plusCongruenceR m p (SPos SZ %+ p) (sym $ zeroIdentity p)
+plusAssocZ m n (SPos SZ) =
+  start (m %+ n %+ SPos SZ)
+  === (m %+ n) `because` zeroIdentityR (m %+ n)
+  === (m %+ (n %+ SPos SZ)) `because` plusCongruenceR m n (n %+ SPos SZ) (sym $ zeroIdentityR n)
+plusAssocZ (SPos m) (SPos n) (SPos p) =
+  start (SPos m %+ SPos n %+ SPos p)
+  === (SPos (m %+ n) %+ SPos p) `because` Refl
+  === SPos (m %+ n %+ p) `because` Refl
+  === SPos (m %+ (n %+ p)) `because` cong (Proxy @'Pos) (plusAssoc m n p)
+  === (SPos m %+ SPos (n %+ p)) `because` Refl
+  === (SPos m %+ (SPos n %+ SPos p)) `because` Refl
+plusAssocZ (SNeg m) (SNeg n) (SNeg p) =
+  start (SNeg m %+ SNeg n %+ SNeg p)
+  === SNeg (m %+ n %+ p) `because` Refl
+  === SNeg (m %+ (n %+ p)) `because` cong (Proxy @'Neg) (plusAssoc m n p)
+  === SNeg m %+ (SNeg n %+ SNeg p) `because` Refl
+plusAssocZ (SPos m) (SNeg (SS n)) (SPos p) = undefined
+plusAssocZ (SNeg m) (SPos n) (SPos p) = undefined
+plusAssocZ (SNeg m) (SNeg n) (SPos p) = undefined
+plusAssocZ (SPos m) (SNeg n) (SNeg p) = undefined
+plusAssocZ (SPos m) (SPos n) (SNeg p) = undefined
+plusAssocZ (SNeg m) (SPos n) (SNeg p) = undefined
+
 -- TODO: finalise this proof
 
 -- Order

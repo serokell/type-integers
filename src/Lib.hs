@@ -140,7 +140,7 @@ singletons [d|
     Neg (S m) + Pos n = n `sub` S m
 
     n * m = case (signOf n, signOf m) of
-      (s1, s2) -> (signToZ $ s1 `signMult` s2) $ prodNat
+      (s1, s2) -> signToZ (s1 `signMult` s2) prodNat
       where
         prodNat = absolute' n * absolute' m
 
@@ -188,9 +188,9 @@ class IsCommutativeRing z where
   inverseAxiom
     :: forall x. Sing x
     -> (x + Inv x) :~: Zero'
-  induction  :: forall k p. p (Zero') 
-             -> (forall (n :: z). ((n >= Zero') ~ 'True) => Sing n -> p n -> p (Succ n)) 
-             -> (forall (n :: z). ((n >= Zero') ~ 'True) => Sing (Inv n) -> p n -> p (Inv n)) 
+  induction  :: forall k p. p (Zero')
+             -> (forall (n :: z). ((n >= Zero') ~ 'True) => Sing n -> p n -> p (Succ n))
+             -> (forall (n :: z). ((n >= Zero') ~ 'True) => Sing (Inv n) -> p n -> p (Inv n))
              -> Sing k -> p k
 
 instance IsCommutativeRing Zahlen where
@@ -198,10 +198,10 @@ instance IsCommutativeRing Zahlen where
   type One' = ('Pos (S Z))
   type Inv m = Inverse m
   zeroNeutral :: Sing (m :: Zahlen) -> Zero' + m :~: m
-  zeroNeutral sm = idLProof $ induction base step neg sm where 
+  zeroNeutral sm = idLProof $ induction base step neg sm where
     base :: PlusZeroL (Zero' :: Zahlen)
     base = IdentityL $ zeroNeutral (SPos SZ)
-    
+
     step :: forall (n :: Zahlen). ((n >= Zero') ~ 'True) => Sing n -> PlusZeroL n -> PlusZeroL (Succ n)
     step sn (IdentityL ih) = IdentityL $
             start (Proxy @(Zero' + Succ n))
@@ -209,8 +209,8 @@ instance IsCommutativeRing Zahlen where
               === Proxy @(Succ n)            `because` succCong ih
 
     neg :: forall (n :: Zahlen). ((n >= Zero') ~ 'True) => Sing (Inv n) -> PlusZeroL n -> PlusZeroL (Inv n)
-    neg sInv (IdentityL ih) = IdentityL $ 
-         start (Proxy @(Zero' + Inv n)) 
+    neg sInv (IdentityL ih) = IdentityL $
+         start (Proxy @(Zero' + Inv n))
            === Proxy @(Inv n) `because` zeroNeutral sInv
 --   zeroIdentity :: forall x m. Absolute'' x :~: 'Z -> x + m :~: m
 --   zeroIdentity Refl = Refl `because` (Proxy )
@@ -235,7 +235,7 @@ class IsCommutativeRing z => IsInteger z where
   zeroEquality = unsafeCoerce Refl
   zeroEquality' :: Absolute'' x :~: Absolute'' y -> Absolute'' x :~: 'Z -> x :~: y
   zeroEquality' Refl Refl = unsafeCoerce Refl
-  
+
   {- zeroIdentityL :: forall (m :: z) (x :: z). x ~ Zero' => Sing m -> Zero' + m :~: m
   zeroIdentityL sm = idLProof $ induction base step neg sm where 
     base :: PlusZeroL x
