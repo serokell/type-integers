@@ -173,7 +173,7 @@ class IsCommutativeRing z where
   commutativity
     :: forall x y. Sing x
     -> Sing y
-    -> x + y :~: y + z
+    -> x + y :~: y + x
   distr
     :: forall x y z. Sing x
     -> Sing y
@@ -188,34 +188,36 @@ class IsCommutativeRing z where
   inverseAxiom
     :: forall x. Sing x
     -> (x + Inv x) :~: Zero'
-  induction  :: forall k p. p (Zero') 
-             -> (forall (n :: z). ((n >= Zero') ~ 'True) => Sing n -> p n -> p (Succ n)) 
-             -> (forall (n :: z). ((n >= Zero') ~ 'True) => Sing (Inv n) -> p n -> p (Inv n)) 
-             -> Sing k -> p k
+
+succForPositive :: forall x. ((x >= Zero') ~ 'True) => Sing x -> (x + One') :~: Succ x 
+succForPositive = undefined
+
+test :: forall (x :: Zahlen) (y :: Zahlen). Sing x -> Sing y -> (x >= y) :~: (y <= x)
+test sn sm = case sn %<= sm of 
 
 instance IsCommutativeRing Zahlen where
   type Zero' = ('Pos 'Z)
   type One' = ('Pos (S Z))
   type Inv m = Inverse m
+
+{-
   zeroNeutral :: Sing (m :: Zahlen) -> Zero' + m :~: m
   zeroNeutral sm = idLProof $ induction base step neg sm where 
     base :: PlusZeroL (Zero' :: Zahlen)
     base = IdentityL $ zeroNeutral (SPos SZ)
     
-    step :: forall (n :: Zahlen). ((n >= Zero') ~ 'True) => Sing n -> PlusZeroL n -> PlusZeroL (Succ n)
+    step :: forall (n :: Zahlen). Sing n -> PlusZeroL n -> PlusZeroL (n + One')
     step sn (IdentityL ih) = IdentityL $
             start (Proxy @(Zero' + Succ n))
               === Proxy @(Succ (Zero' + n))  `because` undefined (Proxy @Zero') (Proxy @n)
               === Proxy @(Succ n)            `because` succCong ih
 
-    neg :: forall (n :: Zahlen). ((n >= Zero') ~ 'True) => Sing (Inv n) -> PlusZeroL n -> PlusZeroL (Inv n)
+    neg :: forall (n :: Zahlen). Sing (Inv n) -> PlusZeroL n -> PlusZeroL (Inv n)
     neg sInv (IdentityL ih) = IdentityL $ 
          start (Proxy @(Zero' + Inv n)) 
-           === Proxy @(Inv n) `because` zeroNeutral sInv
+           === Proxy @(Inv n) `because` zeroNeutral sInv -}
 --   zeroIdentity :: forall x m. Absolute'' x :~: 'Z -> x + m :~: m
---   zeroIdentity Refl = Refl `because` (Proxy )
-  induction base _ _ (SPos SZ) = base
-  induction base step neg (SPos (SS n)) = undefined $ (induction base step neg (SPos n))
+--   zeroIdentity Refl = Refl `because` (Proxy ) -}
 
 type PlusZeroR (n :: k) = IdentityR (+@#@$$) (Zero') n
 type PlusZeroL (n :: k) = IdentityL (+@#@$$) (Zero') n
@@ -235,7 +237,12 @@ class IsCommutativeRing z => IsInteger z where
   zeroEquality = unsafeCoerce Refl
   zeroEquality' :: Absolute'' x :~: Absolute'' y -> Absolute'' x :~: 'Z -> x :~: y
   zeroEquality' Refl Refl = unsafeCoerce Refl
-  
+
+  induction  :: forall k p. p (Zero') 
+             -> (forall (n :: z). ((Zero' <= n) ~ 'True) => Sing n -> p n -> p (One' + n)) 
+             -> (forall (n :: z). ((Zero' <= n) ~ 'True) => Sing (Inv n) -> p n -> p (Inv n)) 
+             -> Sing k -> p k
+
   {- zeroIdentityL :: forall (m :: z) (x :: z). x ~ Zero' => Sing m -> Zero' + m :~: m
   zeroIdentityL sm = idLProof $ induction base step neg sm where 
     base :: PlusZeroL x
@@ -306,7 +313,10 @@ instance IsInteger Zahlen where
   type Signum ('Pos n) = P
   type Signum ('Neg n) = N
   type Absolute'' (_ n) = n
---  zeroIdentity Refl = undefined --start (Proxy :: Proxy (x + m)) === undefined 
+  
+  induction base _ _ (SPos SZ) = base
+  induction base step neg (SPos (SS n)) = step (SPos n) $ induction base step neg (SPos n)
+  induction base step neg sn@(SNeg n) = neg sn $ induction base step neg (SPos n)
 
 natToZ :: Sing n -> Sing (Pos n)
 natToZ SZ = SPos SZ
