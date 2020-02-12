@@ -128,7 +128,7 @@ singletons [d|
     -> Nat
     -> Zahlen
   sub m Z = Pos m
-  sub Z (S n) = Neg (S n)
+  sub Z (S m) = Neg (S m)
   sub (S m) (S n) = m `sub` n
   |]
 
@@ -136,8 +136,8 @@ singletons [d|
   instance Num Zahlen where
     Neg m + Neg n = Neg (m + n)
     Pos m + Pos n = Pos (m + n)
-    Pos m + Neg (S n) = m `sub` S n
-    Neg (S m) + Pos n = n `sub` S m
+    Pos m + Neg n = m `sub` n
+    Neg m + Pos n = n `sub` m
 
     n * m = case (signOf n, signOf m) of
       (s1, s2) -> signToZ (s1 `signMult` s2) prodNat
