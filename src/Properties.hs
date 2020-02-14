@@ -33,6 +33,13 @@ import Lib
 
 -- Equality
 
+cong2
+  :: forall f a a' b b'. Proxy f
+  -> a :~: a'
+  -> b :~: b'
+  -> f a b :~: f a' b'
+cong2 _ Refl Refl = Refl
+
 posInjective
   :: forall n m. Pos n :~: Pos m
   -> n :~: m
@@ -110,6 +117,39 @@ zeroIdentityR (SPos (SS n)) =
 zeroIdentityR (SNeg SZ) = unsafeCoerce Refl
 zeroIdentityR (SNeg (SS n)) = Refl
 
+subLemma
+  :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
+  -> Sing n
+  -> Sing p
+  -> n :~: p
+  -> Sub m n :~: Sub m p
+subLemma m n p Refl = Refl
+
+subLemma'
+  :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
+  -> Sing n
+  -> Sing p
+  -> m :~: n
+  -> Sub m p :~: Sub n p
+subLemma' m n p Refl = Refl
+
+commZ
+  :: forall (m :: Zahlen) (n :: Zahlen). Sing m
+  -> Sing n
+  -> m + n :~: n + m
+commZ (SPos m) (SPos n) =
+  start (SPos m %+ SPos n)
+  === SPos (m %+ n) `because` Refl
+  === SPos (n %+ m) `because` cong (Proxy @'Pos) (plusComm m n)
+  === SPos n %+ SPos m `because` Refl
+commZ (SNeg m) (SNeg n) =
+  start (SNeg m %+ SNeg n)
+  === SNeg (m %+ n) `because` Refl
+  === SNeg (n %+ m) `because` cong (Proxy @'Neg) (plusComm m n)
+  === SNeg n %+ SNeg m `because` Refl
+commZ (SPos m) (SNeg n) = Refl
+commZ (SNeg m) (SPos n) = Refl
+
 distrSub
   :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
   -> Sing n
@@ -120,26 +160,52 @@ distrSub _ SZ (SS p) = Refl
 distrSub _ (SS n) SZ = unsafeCoerce Refl
 distrSub m (SS n) (SS p) = unsafeCoerce $ distrSub m n p
 
+distrSubLNeg
+  :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
+  -> Sing n
+  -> Sing p
+  -> Sub m n + Neg p :~: Sub m (n + p)
+distrSubLNeg _ SZ SZ = Refl
+distrSubLNeg _ SZ (SS _) = Refl
+distrSubLNeg _ (SS _) SZ = unsafeCoerce Refl
+distrSubLNeg SZ (SS n) (SS p) = Refl
+distrSubLNeg (SS m) (SS n) (SS p) = unsafeCoerce $ distrSubLNeg m n p
+
 distrNeg
   :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
   -> Sing n
   -> Sing p
   -> Neg m + Sub n p :~: Sub n (m + p)
-distrNeg = undefined
-
-distrSubR
-  :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
-  -> Sing n
-  -> Sing p
-  -> Pos m + Sub n p :~: Sub (m + n) p
-distrSubR = undefined
+distrNeg m n p =
+  start (SNeg m %+ sSub n p)
+  === (sSub n p %+ SNeg m) `because` commZ (SNeg m) (sSub n p)
+  === sSub n (p %+  m) `because` distrSubLNeg n p m
+  === sSub n (m %+ p) `because` subLemma n (p %+ m) (m %+ p) (plusComm p m)
 
 distrSubL
   :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
   -> Sing n
   -> Sing p
   -> Sub m n + Pos p :~: Sub (m + p) n
-distrSubL = undefined
+distrSubL _ SZ SZ = Refl
+distrSubL _ SZ (SS _) = Refl
+distrSubL m (SS n) SZ =
+  start (sSub m (SS n) %+ SPos SZ)
+  === sSub m (SS n) `because` zeroIdentityR (sSub m (SS n))
+  === sSub (m %+ SZ) (SS n) `because` subLemma' m (m %+ SZ) (SS n) (sym (plusZeroR m))
+distrSubL m (SS n) (SS p) = unsafeCoerce $ distrSubL m n p
+
+
+distrSubR
+  :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
+  -> Sing n
+  -> Sing p
+  -> Pos m + Sub n p :~: Sub (m + n) p
+distrSubR m n p =
+  start (SPos m %+ sSub n p)
+  === (sSub n p %+ SPos m) `because` commZ (SPos m) (sSub n p)
+  === sSub (n %+ m) p `because` distrSubL n p m
+  === sSub (m %+ n) p `because` undefined
 
 plusAssocZ
   :: forall (m :: Zahlen) (n :: Zahlen) (p :: Zahlen). Sing m
@@ -148,35 +214,34 @@ plusAssocZ
   -> ((m + n) + p) :~: (m + (n + p))
 plusAssocZ (SPos SZ) n p =
   start ((SPos SZ %+ n) %+ p)
-  === (n %+ p) `because` 
+  === (n %+ p) `because`
     plusCongruence (SPos SZ %+ n) n p (zeroIdentity n)
   === (SPos SZ %+ (n %+ p)) `because` sym (zeroIdentity (n %+ p))
 plusAssocZ m (SPos SZ) p =
   start ((m %+ SPos SZ) %+ p)
-  === (m %+ p) `because` 
+  === (m %+ p) `because`
     plusCongruence (m %+ SPos SZ) m p (zeroIdentityR m)
-  === (m %+ (SPos SZ %+ p)) `because` 
+  === (m %+ (SPos SZ %+ p)) `because`
     plusCongruenceR m p (SPos SZ %+ p) (sym $ zeroIdentity p)
 plusAssocZ m n (SPos SZ) =
   start (m %+ n %+ SPos SZ)
   === (m %+ n) `because` zeroIdentityR (m %+ n)
-  === (m %+ (n %+ SPos SZ)) `because` 
+  === (m %+ (n %+ SPos SZ)) `because`
     plusCongruenceR m n (n %+ SPos SZ) (sym $ zeroIdentityR n)
 plusAssocZ (SPos m) (SPos n) (SPos p) =
   start (SPos m %+ SPos n %+ SPos p)
   === (SPos (m %+ n) %+ SPos p) `because` Refl
   === SPos (m %+ n %+ p) `because` Refl
-  === SPos (m %+ (n %+ p)) `because` 
+  === SPos (m %+ (n %+ p)) `because`
     cong (Proxy @'Pos) (plusAssoc m n p)
   === (SPos m %+ SPos (n %+ p)) `because` Refl
   === (SPos m %+ (SPos n %+ SPos p)) `because` Refl
 plusAssocZ (SNeg m) (SNeg n) (SNeg p) =
   start (SNeg m %+ SNeg n %+ SNeg p)
   === SNeg (m %+ n %+ p) `because` Refl
-  === SNeg (m %+ (n %+ p)) `because` 
+  === SNeg (m %+ (n %+ p)) `because`
     cong (Proxy @'Neg) (plusAssoc m n p)
   === SNeg m %+ (SNeg n %+ SNeg p) `because` Refl
-
 plusAssocZ (SPos m) (SNeg n) (SPos p) =
   start (SPos m %+ SNeg n %+ SPos p)
   === (sSub m n %+ SPos p) `because` Refl
@@ -188,10 +253,29 @@ plusAssocZ (SNeg m) (SPos n) (SPos p) =
   === sSub n m %+ SPos p `because` Refl
   === sSub (n %+ p) m `because` distrSubL n m p
   === (SNeg m %+ (SPos n %+ SPos p)) `because` Refl
-plusAssocZ (SNeg m) (SNeg n) (SPos p) = undefined
-plusAssocZ (SPos m) (SNeg n) (SNeg p) = undefined
-plusAssocZ (SPos m) (SPos n) (SNeg p) = undefined
-plusAssocZ (SNeg m) (SPos n) (SNeg p) = undefined
+plusAssocZ (SNeg m) (SNeg n) (SPos p) =
+  start (SNeg m %+ SNeg n %+ SPos p)
+  === SNeg (m %+ n) %+ SPos p `because` Refl
+  === sSub p (m %+ n) `because` Refl
+  === (SNeg m %+ sSub p n) `because` sym (distrNeg m p n)
+plusAssocZ (SPos m) (SNeg n) (SNeg p) =
+  start (SPos m %+ SNeg n %+ SNeg p)
+  === (sSub m n %+ SNeg p) `because` undefined
+  === (sSub m (n %+ p)) `because` distrSubLNeg m n p
+  === SPos m %+ SNeg (n %+ p) `because` Refl
+  === SPos m %+ (SNeg n %+ SNeg p) `because` Refl
+plusAssocZ (SPos m) (SPos n) (SNeg p) =
+  start (SPos m %+ SPos n %+ SNeg p)
+  === SPos (m %+ n) %+ SNeg p `because` Refl
+  === sSub (m %+ n) p `because` Refl
+  === SPos m %+ sSub n p `because` sym (distrSubR m n p)
+  === SPos m %+ (SPos n %+ SNeg p) `because` Refl
+plusAssocZ (SNeg m) (SPos n) (SNeg p) =
+  start (SNeg m %+ SPos n %+ SNeg p)
+  === (sSub n m %+ SNeg p) `because` Refl
+  === sSub n (m %+ p) `because` distrSubLNeg n m p
+  === SNeg m %+ sSub n p `because` sym (distrNeg m n p)
+  === SNeg m %+ (SPos n %+ SNeg p) `because` Refl
 
 -- TODO: finalise this proof
 
