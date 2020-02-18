@@ -33,6 +33,10 @@ import Lib
 
 -- Equality
 
+posNegZeroPostulate
+  :: Pos Z :~: Neg Z
+posNegZeroPostulate = unsafeCoerce Refl
+
 cong2
   :: forall f a a' b b'. Proxy f
   -> a :~: a'
@@ -105,17 +109,26 @@ zeroIdentity
   :: forall (m :: Zahlen). Sing m
   -> Pos Z + m :~: m
 zeroIdentity (SPos n) = Refl
-zeroIdentity (SNeg SZ) = unsafeCoerce Refl
-zeroIdentity (SNeg (SS n)) = unsafeCoerce Refl
+zeroIdentity (SNeg SZ) = posNegZeroPostulate
+zeroIdentity (SNeg (SS n)) = Refl
 
 zeroIdentityR
   :: forall (m :: Zahlen). Sing m
   -> m + Pos Z :~: m
-zeroIdentityR (SPos SZ) = unsafeCoerce Refl
+zeroIdentityR (SPos SZ) = 
+  start (SPos SZ %+ SPos SZ)
+  === SPos (SZ %+ SZ) `because` Refl
+  === SPos SZ `because` Refl
 zeroIdentityR (SPos (SS n)) =
   plusCong' (SS n) SZ (SS n) (plusZeroR (SS n))
-zeroIdentityR (SNeg SZ) = unsafeCoerce Refl
+zeroIdentityR (SNeg SZ) = posNegZeroPostulate
 zeroIdentityR (SNeg (SS n)) = Refl
+
+zeroIdentityRNeg
+  :: forall (m :: Zahlen). Sing m
+  -> m + Neg Z :~: m
+zeroIdentityRNeg m = 
+  trans (plusCongruenceR m (SNeg SZ) (SPos SZ) (sym posNegZeroPostulate)) (zeroIdentityR m)
 
 subLemma
   :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
@@ -157,8 +170,11 @@ distrSub
   -> (Sub m n + Pos p) :~: Sub (m + p) n
 distrSub _ SZ SZ = Refl
 distrSub _ SZ (SS p) = Refl
-distrSub _ (SS n) SZ = unsafeCoerce Refl
-distrSub m (SS n) (SS p) = unsafeCoerce $ distrSub m n p
+distrSub m (SS n) SZ = 
+  start (sSub m (SS n) %+ SPos SZ)
+  === sSub m (SS n) `because` zeroIdentityR (sSub m (SS n))
+  === sSub (m %+ SZ) (SS n) `because` subLemma' m (m %+ SZ) (SS n) (sym (plusZeroR m))
+distrSub m (SS n) (SS p) = distrSub m (SS n) (SS p)
 
 distrSubLNeg
   :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
@@ -167,8 +183,10 @@ distrSubLNeg
   -> Sub m n + Neg p :~: Sub m (n + p)
 distrSubLNeg _ SZ SZ = Refl
 distrSubLNeg _ SZ (SS _) = Refl
-distrSubLNeg _ (SS _) SZ = unsafeCoerce Refl
-distrSubLNeg SZ (SS n) (SS p) = Refl
+distrSubLNeg m (SS n) SZ =
+  start (sSub m (SS n) %+ SNeg SZ)
+  === sSub m (SS n) `because` zeroIdentityRNeg (sSub m (SS n))
+  === sSub m ((SS n) %+ SZ) `because` subLemma m (SS n) (SS n %+ SZ) (sym $ plusZeroR (SS n))
 distrSubLNeg (SS m) (SS n) (SS p) = unsafeCoerce $ distrSubLNeg m n p
 
 distrNeg
@@ -203,9 +221,9 @@ distrSubR
   -> Pos m + Sub n p :~: Sub (m + n) p
 distrSubR m n p =
   start (SPos m %+ sSub n p)
-  === (sSub n p %+ SPos m) `because` commZ (SPos m) (sSub n p)
+  === sSub n p %+ SPos m `because` commZ (SPos m) (sSub n p)
   === sSub (n %+ m) p `because` distrSubL n p m
-  === sSub (m %+ n) p `because` undefined
+  === sSub (m %+ n) p `because` subLemma' (n %+ m) (m %+ n) p (plusComm n m)
 
 plusAssocZ
   :: forall (m :: Zahlen) (n :: Zahlen) (p :: Zahlen). Sing m
@@ -276,8 +294,6 @@ plusAssocZ (SNeg m) (SPos n) (SNeg p) =
   === sSub n (m %+ p) `because` distrSubLNeg n m p
   === SNeg m %+ sSub n p `because` sym (distrNeg m n p)
   === SNeg m %+ (SPos n %+ SNeg p) `because` Refl
-
--- TODO: finalise this proof
 
 -- Order
 
