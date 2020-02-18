@@ -88,10 +88,21 @@ plusCong'
   -> Pos n + Pos m :~: Pos p
 plusCong' n m p Refl = Refl
 
-multCong
-  :: forall (n :: Zahlen) (m :: Zahlen) (p :: Zahlen). n :~: m
-  -> (n * p) :~: (m * p)
-multCong Refl = Refl
+multCongInt
+  :: forall (m :: Zahlen) (n :: Zahlen) (p :: Zahlen). Sing m
+  -> Sing n 
+  -> Sing p
+  -> m :~: n
+  -> m * p :~: n * p
+multCongInt m n p Refl = Refl
+
+multCongInt'
+  :: forall (m :: Zahlen) (n :: Zahlen) (p :: Zahlen). Sing m
+  -> Sing n
+  -> Sing p
+  -> n :~: p
+  -> m * n :~: m * p
+multCongInt' m n p Refl = Refl
 
 negInv
   :: forall n. Sing n
@@ -115,7 +126,7 @@ zeroIdentity (SNeg (SS n)) = Refl
 zeroIdentityR
   :: forall (m :: Zahlen). Sing m
   -> m + Pos Z :~: m
-zeroIdentityR (SPos SZ) = 
+zeroIdentityR (SPos SZ) =
   start (SPos SZ %+ SPos SZ)
   === SPos (SZ %+ SZ) `because` Refl
   === SPos SZ `because` Refl
@@ -127,8 +138,10 @@ zeroIdentityR (SNeg (SS n)) = Refl
 zeroIdentityRNeg
   :: forall (m :: Zahlen). Sing m
   -> m + Neg Z :~: m
-zeroIdentityRNeg m = 
-  trans (plusCongruenceR m (SNeg SZ) (SPos SZ) (sym posNegZeroPostulate)) (zeroIdentityR m)
+zeroIdentityRNeg m =
+  trans
+    (plusCongruenceR m (SNeg SZ) (SPos SZ) $ sym posNegZeroPostulate) $
+    zeroIdentityR m
 
 subLemma
   :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
@@ -170,7 +183,7 @@ distrSub
   -> (Sub m n + Pos p) :~: Sub (m + p) n
 distrSub _ SZ SZ = Refl
 distrSub _ SZ (SS p) = Refl
-distrSub m (SS n) SZ = 
+distrSub m (SS n) SZ =
   start (sSub m (SS n) %+ SPos SZ)
   === sSub m (SS n) `because` zeroIdentityR (sSub m (SS n))
   === sSub (m %+ SZ) (SS n) `because` subLemma' m (m %+ SZ) (SS n) (sym (plusZeroR m))
@@ -186,7 +199,7 @@ distrSubLNeg _ SZ (SS _) = Refl
 distrSubLNeg m (SS n) SZ =
   start (sSub m (SS n) %+ SNeg SZ)
   === sSub m (SS n) `because` zeroIdentityRNeg (sSub m (SS n))
-  === sSub m ((SS n) %+ SZ) `because` subLemma m (SS n) (SS n %+ SZ) (sym $ plusZeroR (SS n))
+  === sSub m (SS n %+ SZ) `because` subLemma m (SS n) (SS n %+ SZ) (sym $ plusZeroR (SS n))
 distrSubLNeg (SS m) (SS n) (SS p) = unsafeCoerce $ distrSubLNeg m n p
 
 distrNeg
@@ -294,6 +307,92 @@ plusAssocZ (SNeg m) (SPos n) (SNeg p) =
   === sSub n (m %+ p) `because` distrSubLNeg n m p
   === SNeg m %+ sSub n p `because` sym (distrNeg m n p)
   === SNeg m %+ (SPos n %+ SNeg p) `because` Refl
+
+zeroMult
+  :: forall (m :: Zahlen). Sing m
+  -> Pos Z * m :~: Pos Z
+zeroMult (SPos maxBound) = Refl
+zeroMult (SNeg m) =
+  start (SPos SZ %* SNeg m)
+  === SNeg (SZ %* m) `because` Refl
+  === SNeg SZ `because` Refl
+  === SPos SZ `because` sym posNegZeroPostulate
+
+zeroMult'
+  :: forall (m :: Zahlen). Sing m
+  -> m * Pos Z :~: Pos Z
+zeroMult' (SPos m) =
+  start (SPos m %* SPos SZ)
+  === SPos (m %* SZ) `because` Refl
+  === SPos SZ `because` posLemma (multZeroR m)
+zeroMult' (SNeg m) =
+  start (SNeg m %* SPos SZ)
+  === SNeg (m %* SZ) `because` Refl
+  === SNeg SZ `because` negLemma (multZeroR m)
+  === SPos SZ `because` sym posNegZeroPostulate
+
+prodComm
+  :: forall (m :: Zahlen) (n :: Zahlen). Sing m
+  -> Sing n
+  -> m * n :~: n * m
+prodComm (SPos m) (SPos n) =
+  start (SPos m %* SPos n)
+  === SPos (m %* n) `because` Refl
+  === SPos (n %* m) `because` posLemma (multComm m n)
+  === SPos n %* SPos m `because` Refl
+prodComm (SNeg m) (SNeg n) =
+  start (SNeg m %* SNeg n)
+  === SPos (m %* n) `because` Refl
+  === SPos (n %* m) `because` posLemma (multComm m n)
+  === SNeg n %* SNeg m `because` Refl
+prodComm (SNeg m) (SPos n) =
+  start (SNeg m %* SPos n)
+  === SNeg (m %* n) `because` Refl
+  === SNeg (n %* m) `because` negLemma (multComm m n)
+  === SPos n %* SNeg m `because` Refl
+prodComm (SPos m) (SNeg n) =
+  start (SPos m %* SNeg n)
+  === SNeg (m %* n) `because` Refl
+  === SNeg (n %* m) `because` negLemma (multComm m n)
+  === SNeg n %* SPos m `because` Refl
+
+prodAssoc
+  :: forall (m :: Zahlen) (n :: Zahlen) (p :: Zahlen). Sing m
+  -> Sing n
+  -> Sing p
+  -> (m * n) * p :~: m * (n * p)
+prodAssoc (SPos m) (SPos n) (SPos p) =
+  start ((SPos m %* SPos n) %* SPos p)
+  === SPos ((m %* n) %* p) `because` Refl
+  === SPos (m %* (n %* p)) `because` posLemma (multAssoc m n p)
+prodAssoc (SNeg m) (SNeg n) (SNeg p) =
+  start ((SNeg m %* SNeg n) %* SNeg p)
+  === SNeg ((m %* n) %* p) `because` Refl
+  === SNeg (m %* (n %* p)) `because` negLemma (multAssoc m n p)
+prodAssoc (SNeg m) (SPos n) (SPos p) =
+  start ((SNeg m %* SPos n) %* SPos p)
+  === SNeg ((m %* n) %* p) `because` Refl
+  === SNeg (m %* (n %* p)) `because` negLemma (multAssoc m n p)
+prodAssoc (SNeg m) (SPos n) (SNeg p) =
+  start ((SNeg m %* SPos n) %* SNeg p)
+  === SPos ((m %* n) %* p) `because` Refl
+  === SPos (m %* (n %* p)) `because` posLemma (multAssoc m n p)
+prodAssoc (SPos m) (SNeg n) (SNeg p) =
+  start ((SPos m %* SNeg n) %* SNeg p)
+  === SPos ((m %* n) %* p) `because` Refl
+  === SPos (m %* (n %* p)) `because` posLemma (multAssoc m n p)
+prodAssoc (SPos m) (SNeg n) (SPos p) =
+  start ((SPos m %* SNeg n) %* SPos p)
+  === SNeg ((m %* n) %* p) `because` Refl
+  === SNeg (m %* (n %* p)) `because` negLemma (multAssoc m n p)
+prodAssoc (SPos m) (SPos n) (SNeg p) =
+  start ((SPos m %* SPos n) %* SNeg p)
+  === SNeg ((m %* n) %* p) `because` Refl
+  === SNeg (m %* (n %* p)) `because` negLemma (multAssoc m n p)
+prodAssoc (SNeg m) (SNeg n) (SPos p) =
+  start ((SNeg m %* SNeg n) %* SPos p)
+  === SPos ((m %* n) %* p) `because` Refl
+  === SPos (m %* (n %* p)) `because` posLemma (multAssoc m n p)
 
 -- Order
 

@@ -71,8 +71,10 @@ singletons [d|
     :: Sign
     -> Sign
     -> Sign
-  signMult P s2 = s2
-  signMult N s2 = opposite N
+  signMult P P = P
+  signMult N N = P
+  signMult N P = N
+  signMult P N = N
 
   signToZ
     :: Sign
@@ -139,10 +141,10 @@ singletons [d|
     Pos m + Neg n = m `sub` n
     Neg m + Pos n = n `sub` m
 
-    n * m = case (signOf n, signOf m) of
-      (s1, s2) -> signToZ (s1 `signMult` s2) prodNat
-      where
-        prodNat = absolute' n * absolute' m
+    (Pos n) * (Pos m) = Pos $ n * m
+    (Neg n) * (Neg m) = Pos $ n * m
+    (Pos n) * (Neg m) = Neg $ n * m
+    (Neg n) * (Pos m) = Neg $ n * m
 
     abs = absolute
 
