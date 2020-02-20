@@ -72,8 +72,11 @@ singletons [d|
     :: Sign
     -> Sign
     -> Sign
-  signMult P s2 = s2
-  signMult N s2 = opposite s2
+
+  signMult P P = P
+  signMult N N = P
+  signMult N P = N
+  signMult P N = N
 
   signToZ
     :: Sign
@@ -129,7 +132,7 @@ singletons [d|
     -> Nat
     -> Zahlen
   sub m Z = Pos m
-  sub Z (S n) = Neg (S n)
+  sub Z (S m) = Neg (S m)
   sub (S m) (S n) = m `sub` n
   |]
 
@@ -157,109 +160,9 @@ singletons [d|
         False -> Neg $ fromInteger n
   |]
 
-newtype IdentityR op e n = IdentityR { idRProof :: Apply (op n) e :~: n }
-newtype IdentityL op e n = IdentityL { idLProof :: Apply (op e) n :~: n }
+-- newtype IdentityR op e n = IdentityR { idRProof :: Apply (op n) e :~: n }
+-- newtype IdentityL op e n = IdentityL { idLProof :: Apply (op e) n :~: n }
 
---succForPositive :: forall x. ((x >= Zero') ~ 'True) => Sing x -> (x + One') :~: Succ x 
---succForPositive = undefined
-
---test :: forall (x :: Zahlen) (y :: Zahlen). Sing x -> Sing y -> (x >= y) :~: (y <= x)
---test sn sm = case sn %<= sm of 
-
-{-
-  zeroNeutral :: Sing (m :: Zahlen) -> Zero' + m :~: m
-  zeroNeutral sm = idLProof $ induction base step neg sm where 
-    base :: PlusZeroL (Zero' :: Zahlen)
-    base = IdentityL $ zeroNeutral (SPos SZ)
-    
-    step :: forall (n :: Zahlen). Sing n -> PlusZeroL n -> PlusZeroL (n + One')
-    step sn (IdentityL ih) = IdentityL $
-            start (Proxy @(Zero' + Succ n))
-              === Proxy @(Succ (Zero' + n))  `because` undefined (Proxy @Zero') (Proxy @n)
-              === Proxy @(Succ n)            `because` succCong ih
-
-    neg :: forall (n :: Zahlen). Sing (Inv n) -> PlusZeroL n -> PlusZeroL (Inv n)
-    neg sInv (IdentityL ih) = IdentityL $ 
-         start (Proxy @(Zero' + Inv n)) 
-           === Proxy @(Inv n) `because` zeroNeutral sInv -}
---   zeroIdentity :: forall x m. Absolute'' x :~: 'Z -> x + m :~: m
---   zeroIdentity Refl = Refl `because` (Proxy ) -}
-
-{- type PlusZeroR (n :: k) = IdentityR (+@#@$$) (Zero') n
-type PlusZeroL (n :: k) = IdentityL (+@#@$$) (Zero') n
-newtype PlusSuccL (m :: k) =
-  PlusSuccL { plusSuccLProof :: forall n. Proxy n -> Succ n + m :~: Succ (n + m) }
-newtype PlusSuccR (n :: k) =
-  PlusSuccR { plusSuccRProof :: forall m. Proxy m -> n + Succ m :~: Succ (n + m) }
-
-succCong :: n :~: m -> Succ n :~: Succ m
-succCong Refl = Refl 
-
-  zeroIdentityL :: forall (m :: z) (x :: z). x ~ Zero' => Sing m -> Zero' + m :~: m
-  zeroIdentityL sm = idLProof $ induction base step neg sm where 
-    base :: PlusZeroL x
-    base = IdentityL $ zeroIdentityR (SPos SZ)
-    
-    step :: forall (n :: z). Sing n -> PlusZeroL n -> PlusZeroL (Succ n)
-    step sn (IdentityL ih) = IdentityL $
-            start (Proxy @(Zero' + Succ n))
-              === Proxy @(Succ (Zero' + n)) `because` plusSuccR (Proxy @Zero') (Proxy @n)
-              === Proxy @(Succ n)            `because` succCong ih
-
-    neg :: forall (n :: z). Sing (Inv n) -> PlusZeroL n -> PlusZeroL (Inv n)
-    neg sInv (IdentityL ih) = IdentityL $ 
-            start (Proxy @(Zero' + Inv n)) 
-            === Proxy @(Inv n) `because` zeroIdentityL sInv
---           === Proxy @(Inv (Zero' + Inv n)) `because` plusSuccR (Proxy @Zero') (Proxy @(Inv n))
---           === Proxy @(Inv n)               `because` succCong ih
-  
-  zeroIdentityR :: forall (m :: z) (x :: z). x ~ Zero' => Sing m -> m + Zero' :~: m
-  zeroIdentityR sm = idRProof $ induction base step neg sm where -- Refl ---start (Proxy :: Proxy (x + m)) === undefined 
-    base :: PlusZeroR x
-    base = IdentityR $ zeroIdentityL (SPos SZ)
-    
-    step :: Sing n -> PlusZeroR n -> PlusZeroR (Succ n)
-    step = undefined 
-
-    neg :: Sing (Inv n) -> PlusZeroR n -> PlusZeroR (Inv n)
-    neg = undefined
-
-  plusSuccL :: forall n m. Proxy n -> Proxy m -> Succ n + m :~: Succ (n + m :: z)
-  plusSuccL pn pm = plusSuccLProof (induction base step neg (_ :: Sing m)) pn
-    where
-      base :: PlusSuccL (Zero' :: z)
-      base = PlusSuccL $ \(p :: Proxy n1) ->
-          start (Proxy @(Succ n1 + Zero')) 
-            === (Proxy @(Succ n1)) `because` zeroIdentityR (Proxy @(Succ n1))
-            === (Proxy @(Succ (n1 + Zero'))) `because` succCong (sym $ zeroIdentityR p)
-
-      step :: forall (n :: z). PlusSuccL n -> PlusSuccL (Succ n)
-      step (PlusSuccL ih) = PlusSuccL $ \sn -> undefined {-
-        start (sS sn %+ sS sm)
-        === sS (sS sn %+ sm)   `because` plusSuccR (sS sn) sm
-        === sS (sS (sn %+ sm)) `because` succCong (ih sn)
-        === sS (sn %+ sS sm)   `because` succCong (sym $ plusSuccR sn sm)-}
-      
-      neg :: forall (n :: z). PlusSuccL n -> PlusSuccL (Inv n)
-      neg = undefined
-
-  plusSuccR :: forall n m. Proxy n -> Proxy m -> n + Succ m :~: Succ (n + m :: z)
-  plusSuccR pn pm = plusSuccRProof (induction base step neg (_ :: Sing n)) pm
-    where
-      base :: PlusSuccR (Zero' :: z)
-      base = PlusSuccR $ \(p :: Proxy m1) ->
-        start (Proxy @(Zero' + Succ m1))
-          === (Proxy @(Succ m1)) `because` zeroIdentityL (Proxy @(Succ m1))
-          ===  Proxy @(Succ (Zero' + m1)) `because` succCong (sym $ zeroIdentityL p)
-
-      step :: forall (n :: z). PlusSuccR n -> PlusSuccR (Succ n)
-      step (PlusSuccR ih) = undefined {- PlusSuccR $ \sk ->
-        start (sS sn %+ sS sk)
-        === sS (sn %+ sS sk)    `because` plusSuccL sn (sS sk)
-        === sS (sS (sn %+ sk))  `because` succCong (ih sk)
-        === sS (sS sn %+ sk)    `because` succCong (sym $ plusSuccL sn sk) -} 
-      neg :: forall (n :: z). PlusSuccR n -> PlusSuccR (Inv n)
-      neg = undefined -}
 
 natToZ :: Sing n -> Sing (Pos n)
 natToZ SZ = SPos SZ
