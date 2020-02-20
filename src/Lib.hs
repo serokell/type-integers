@@ -8,6 +8,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE MultiParamTypeClasses#-}
@@ -72,7 +73,7 @@ singletons [d|
     -> Sign
     -> Sign
   signMult P s2 = s2
-  signMult N s2 = opposite N
+  signMult N s2 = opposite s2
 
   signToZ
     :: Sign
@@ -136,13 +137,13 @@ singletons [d|
   instance Num Zahlen where
     Neg m + Neg n = Neg (m + n)
     Pos m + Pos n = Pos (m + n)
-    Pos m + Neg (S n) = m `sub` S n
-    Neg (S m) + Pos n = n `sub` S m
+    Pos m + Neg n = m `sub` n
+    Neg m + Pos n = n `sub` m
 
-    n * m = case (signOf n, signOf m) of
-      (s1, s2) -> (signToZ $ s1 `signMult` s2) $ prodNat
-      where
-        prodNat = absolute' n * absolute' m
+    (Pos n) * (Pos m) = Pos $ n * m
+    (Neg n) * (Neg m) = Pos $ n * m
+    (Pos n) * (Neg m) = Neg $ n * m
+    (Neg n) * (Pos m) = Neg $ n * m
 
     abs = absolute
 
@@ -159,46 +160,11 @@ singletons [d|
 newtype IdentityR op e n = IdentityR { idRProof :: Apply (op n) e :~: n }
 newtype IdentityL op e n = IdentityL { idLProof :: Apply (op e) n :~: n }
 
-class IsCommutativeRing z where
-  type Zero' :: z
-  type One' :: z
-  type Inv (m :: z) :: z
+--succForPositive :: forall x. ((x >= Zero') ~ 'True) => Sing x -> (x + One') :~: Succ x 
+--succForPositive = undefined
 
-  oneIsNotZero :: One' :~: Zero' -> Void
-  associativity
-    :: forall x y z. Sing x
-    -> Sing y
-    -> Sing z
-    -> (x + y) + z :~: x + (y + z)
-  commutativity
-    :: forall x y. Sing x
-    -> Sing y
-    -> x + y :~: y + x
-  distr
-    :: forall x y z. Sing x
-    -> Sing y
-    -> Sing z
-    -> (x * (y + z)) :~: ((x * y) + (x * z))
-  zeroNeutral
-    :: forall (x :: z). Sing x
-    -> Zero' + x :~: x
-  oneNeutral
-    :: forall x. Sing x
-    -> x * One' :~: x
-  inverseAxiom
-    :: forall x. Sing x
-    -> (x + Inv x) :~: Zero'
-
-succForPositive :: forall x. ((x >= Zero') ~ 'True) => Sing x -> (x + One') :~: Succ x 
-succForPositive = undefined
-
-test :: forall (x :: Zahlen) (y :: Zahlen). Sing x -> Sing y -> (x >= y) :~: (y <= x)
-test sn sm = case sn %<= sm of 
-
-instance IsCommutativeRing Zahlen where
-  type Zero' = ('Pos 'Z)
-  type One' = ('Pos (S Z))
-  type Inv m = Inverse m
+--test :: forall (x :: Zahlen) (y :: Zahlen). Sing x -> Sing y -> (x >= y) :~: (y <= x)
+--test sn sm = case sn %<= sm of 
 
 {-
   zeroNeutral :: Sing (m :: Zahlen) -> Zero' + m :~: m
@@ -219,7 +185,7 @@ instance IsCommutativeRing Zahlen where
 --   zeroIdentity :: forall x m. Absolute'' x :~: 'Z -> x + m :~: m
 --   zeroIdentity Refl = Refl `because` (Proxy ) -}
 
-type PlusZeroR (n :: k) = IdentityR (+@#@$$) (Zero') n
+{- type PlusZeroR (n :: k) = IdentityR (+@#@$$) (Zero') n
 type PlusZeroL (n :: k) = IdentityL (+@#@$$) (Zero') n
 newtype PlusSuccL (m :: k) =
   PlusSuccL { plusSuccLProof :: forall n. Proxy n -> Succ n + m :~: Succ (n + m) }
@@ -227,23 +193,9 @@ newtype PlusSuccR (n :: k) =
   PlusSuccR { plusSuccRProof :: forall m. Proxy m -> n + Succ m :~: Succ (n + m) }
 
 succCong :: n :~: m -> Succ n :~: Succ m
-succCong Refl = Refl
+succCong Refl = Refl 
 
-class IsCommutativeRing z => IsInteger z where
-  type Signum (m :: z) :: Sign
-  type Absolute'' (m :: z) :: Nat
-
-  zeroEquality :: (Absolute'' x ~ Absolute'' y, Absolute'' x ~ 'Z) => x :~: y
-  zeroEquality = unsafeCoerce Refl
-  zeroEquality' :: Absolute'' x :~: Absolute'' y -> Absolute'' x :~: 'Z -> x :~: y
-  zeroEquality' Refl Refl = unsafeCoerce Refl
-
-  induction  :: forall k p. p (Zero') 
-             -> (forall (n :: z). ((Zero' <= n) ~ 'True) => Sing n -> p n -> p (One' + n)) 
-             -> (forall (n :: z). ((Zero' <= n) ~ 'True) => Sing (Inv n) -> p n -> p (Inv n)) 
-             -> Sing k -> p k
-
-  {- zeroIdentityL :: forall (m :: z) (x :: z). x ~ Zero' => Sing m -> Zero' + m :~: m
+  zeroIdentityL :: forall (m :: z) (x :: z). x ~ Zero' => Sing m -> Zero' + m :~: m
   zeroIdentityL sm = idLProof $ induction base step neg sm where 
     base :: PlusZeroL x
     base = IdentityL $ zeroIdentityR (SPos SZ)
@@ -308,15 +260,6 @@ class IsCommutativeRing z => IsInteger z where
         === sS (sS sn %+ sk)    `because` succCong (sym $ plusSuccL sn sk) -} 
       neg :: forall (n :: z). PlusSuccR n -> PlusSuccR (Inv n)
       neg = undefined -}
-
-instance IsInteger Zahlen where
-  type Signum ('Pos n) = P
-  type Signum ('Neg n) = N
-  type Absolute'' (_ n) = n
-  
-  induction base _ _ (SPos SZ) = base
-  induction base step neg (SPos (SS n)) = step (SPos n) $ induction base step neg (SPos n)
-  induction base step neg sn@(SNeg n) = neg sn $ induction base step neg (SPos n)
 
 natToZ :: Sing n -> Sing (Pos n)
 natToZ SZ = SPos SZ

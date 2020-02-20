@@ -29,13 +29,16 @@ library
   exposed-modules:
       Lib
       Properties
+      Nat
   hs-source-dirs:
       src
   build-depends:
       base >=4.7 && <5,
       equational-reasoning,
       singletons,
-      type-natural
+      type-natural,
+      ghc-typelits-presburger,
+      singletons-presburger
   default-language: Haskell2010
 
 executable type-integers-exe
