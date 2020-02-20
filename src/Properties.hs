@@ -22,7 +22,7 @@ import Data.Type.Equality
 import Data.Type.Natural
 import Data.Type.Natural.Class.Arithmetic
 import Data.Type.Natural.Class.Order (leqTrans, leqAntisymm, leqRefl)
-import Data.Kind                    (Type)
+import Data.Kind                     (Type)
 
 import Proof.Equational
 import Proof.Propositional
@@ -126,13 +126,11 @@ zeroIdentity (SNeg (SS n)) = Refl
 zeroIdentityR
   :: forall (m :: Zahlen). Sing m
   -> m + Pos Z :~: m
-zeroIdentityR (SPos SZ) =
-  start (SPos SZ %+ SPos SZ)
-  === SPos (SZ %+ SZ) `because` Refl
-  === SPos SZ `because` Refl
+zeroIdentityR (SPos SZ) = Refl
 zeroIdentityR (SPos (SS n)) =
   plusCong' (SS n) SZ (SS n) (plusZeroR (SS n))
-zeroIdentityR (SNeg SZ) = posNegZeroPostulate
+zeroIdentityR (SNeg SZ) = 
+  posNegZeroPostulate
 zeroIdentityR (SNeg (SS n)) = Refl
 
 zeroIdentityRNeg
@@ -163,16 +161,8 @@ commZ
   :: forall (m :: Zahlen) (n :: Zahlen). Sing m
   -> Sing n
   -> m + n :~: n + m
-commZ (SPos m) (SPos n) =
-  start (SPos m %+ SPos n)
-  === SPos (m %+ n) `because` Refl
-  === SPos (n %+ m) `because` cong (Proxy @'Pos) (plusComm m n)
-  === SPos n %+ SPos m `because` Refl
-commZ (SNeg m) (SNeg n) =
-  start (SNeg m %+ SNeg n)
-  === SNeg (m %+ n) `because` Refl
-  === SNeg (n %+ m) `because` cong (Proxy @'Neg) (plusComm m n)
-  === SNeg n %+ SNeg m `because` Refl
+commZ (SPos m) (SPos n) = cong (Proxy @'Pos) (plusComm m n)
+commZ (SNeg m) (SNeg n) = cong (Proxy @'Neg) (plusComm m n)
 commZ (SPos m) (SNeg n) = Refl
 commZ (SNeg m) (SPos n) = Refl
 
@@ -278,11 +268,7 @@ zeroMult
   :: forall (m :: Zahlen). Sing m
   -> Pos Z * m :~: Pos Z
 zeroMult (SPos maxBound) = Refl
-zeroMult (SNeg m) =
-  start (SPos SZ %* SNeg m)
-  === SNeg (SZ %* m) `because` Refl
-  === SNeg SZ `because` Refl
-  === SPos SZ `because` sym posNegZeroPostulate
+zeroMult (SNeg m) = sym posNegZeroPostulate
 
 zeroMult'
   :: forall (m :: Zahlen). Sing m
@@ -297,24 +283,25 @@ prodComm
   :: forall (m :: Zahlen) (n :: Zahlen). Sing m
   -> Sing n
   -> m * n :~: n * m
-prodComm (SPos m) (SPos n) = posLemma (multComm m n)
-prodComm (SNeg m) (SNeg n) = posLemma (multComm m n)
-prodComm (SNeg m) (SPos n) = negLemma (multComm m n)
-prodComm (SPos m) (SNeg n) = negLemma (multComm m n)
+prodComm (SPos m) (SPos n) = posLemma $ multComm m n
+prodComm (SNeg m) (SNeg n) = posLemma $ multComm m n
+prodComm (SNeg m) (SPos n) = negLemma $ multComm m n
+prodComm (SPos m) (SNeg n) = negLemma $ multComm m n
 
 prodAssoc
   :: forall (m :: Zahlen) (n :: Zahlen) (p :: Zahlen). Sing m
   -> Sing n
   -> Sing p
   -> (m * n) * p :~: m * (n * p)
-prodAssoc (SPos m) (SPos n) (SPos p) = posLemma (multAssoc m n p)
-prodAssoc (SNeg m) (SNeg n) (SNeg p) = negLemma (multAssoc m n p)
-prodAssoc (SNeg m) (SPos n) (SPos p) = negLemma (multAssoc m n p)
-prodAssoc (SNeg m) (SPos n) (SNeg p) = posLemma (multAssoc m n p)
-prodAssoc (SPos m) (SNeg n) (SNeg p) = posLemma (multAssoc m n p)
-prodAssoc (SPos m) (SNeg n) (SPos p) = negLemma (multAssoc m n p)
-prodAssoc (SPos m) (SPos n) (SNeg p) = negLemma (multAssoc m n p)
-prodAssoc (SNeg m) (SNeg n) (SPos p) = posLemma (multAssoc m n p)
+prodAssoc (SPos m) (SPos n) (SPos p) = posLemma $ multAssoc m n p
+prodAssoc (SNeg m) (SNeg n) (SNeg p) = negLemma $ multAssoc m n p
+prodAssoc (SNeg m) (SPos n) (SPos p) = negLemma $ multAssoc m n p
+prodAssoc (SNeg m) (SPos n) (SNeg p) = posLemma $ multAssoc m n p
+prodAssoc (SPos m) (SNeg n) (SNeg p) = posLemma $ multAssoc m n p
+prodAssoc (SPos m) (SNeg n) (SPos p) = negLemma $ multAssoc m n p
+prodAssoc (SPos m) (SPos n) (SNeg p) = negLemma $ multAssoc m n p
+prodAssoc (SNeg m) (SNeg n) (SPos p) = posLemma $ multAssoc m n p
+  
 
 -- Order
 
@@ -328,15 +315,20 @@ converseLeq
   -> IsTrue (m <= n)
 converseLeq (PosLeqPos witness) = witness
 
-leqReflexive
+leqReflexiveZ
   :: forall (m :: Zahlen) (n :: Zahlen). Sing m
   -> Sing n
   -> m :~: n
   -> ZLeq m n
-leqReflexive m n Refl =
+leqReflexiveZ m n Refl =
   case m of
     SPos n -> PosLeqPos $ leqRefl n
     SNeg n -> NegLeqNeg $ leqRefl n
+
+leqReflZ 
+  :: forall (m :: Zahlen). Sing m
+  -> ZLeq m m 
+leqReflZ m = leqReflexiveZ m m Refl
 
 leqTransZ
   :: forall m n p. Sing m
@@ -451,3 +443,41 @@ totality sing1 sing2 =
       case n1 %<= n2 of
         STrue -> Left $ PosLeqPos $ unsafeCoerce Witness
         SFalse -> Right $ PosLeqPos $ unsafeCoerce Witness
+
+subLemmaZ
+  :: forall (m :: Nat) (n :: Nat). Sing m
+  -> Sing n
+  -> ZLeq (Sub m n) (Pos m)
+subLemmaZ m SZ = 
+  leqReflZ (SPos m)
+subLemmaZ SZ (SS _) =
+  NegLeqPos
+subLemmaZ (SS m) (SS n) = 
+  leqTransZ (sSub m n) (SPos m) (SPos (SS m))
+    (subLemmaZ m n) (PosLeqPos $ leqSuccStepR m m $ leqRefl m)
+
+subLemmaRight
+  :: forall (m :: Nat) (n :: Nat). Sing m
+  -> Sing n
+  -> ZLeq (Neg m) (Sub n m)
+subLemmaRight SZ n = NegLeqPos
+subLemmaRight (SS m) SZ = NegLeqNeg (leqRefl (SS m))
+subLemmaRight (SS m) (SS n) = 
+  undefined
+
+plusMonotoneZ 
+  :: forall (m :: Zahlen) (n :: Zahlen) (p :: Zahlen). Sing m
+  -> Sing n
+  -> Sing p
+  -> ZLeq m n 
+  -> ZLeq (m + p) (n + p)
+plusMonotoneZ (SPos m) (SPos n) (SPos p) (PosLeqPos witness) = 
+  PosLeqPos (plusMonotoneL m n p witness)
+plusMonotoneZ (SPos m) (SPos n) (SNeg p) (PosLeqPos witness) = 
+  undefined
+plusMonotoneZ (SNeg m) (SNeg n) (SNeg p) (NegLeqNeg witness) =
+  NegLeqNeg (plusMonotoneL n m p witness)
+plusMonotoneZ (SNeg m) (SPos n) (SNeg p) NegLeqPos = 
+  undefined
+plusMonotoneZ (SNeg m) (SPos n) (SPos p) NegLeqPos = 
+  undefined
