@@ -75,6 +75,29 @@ eq1 sm sn = case (sCompare sm (SS sn)) of
   --  Right Refl -> error "test"                           If I enanble this case, the compiler shows a warning about inaccesible case. 
 
 
+-- prove n + (a - b) == (n + a) - b 
+
+newtype MultiAssoc op1 op2 n = MultiAssoc { multiAssocProof :: forall k l. Sing k -> Sing l ->
+                               Apply (op1 (Apply (op2 n) k)) l :~:
+                               Apply (op2 n) (Apply (op1 k) l)
+                               }
+
+type PlusMinusAssoc = MultiAssoc (-@#@$$) (+@#@$$)
+
+plusMinusComm :: forall n k (l :: Nat). 
+  Sing n -> Sing k -> Sing l -> IsTrue (l <= k) -> ((n + k) - l) :~: (n + (k - l))
+plusMinusComm sn sk sl Witness = multiAssocProof (induction base step sn) sk sl 
+  where 
+    base :: PlusMinusAssoc 'Z
+    base = MultiAssoc $ \sk sl -> Refl
+    
+    step :: forall (n1 :: Nat). Sing n1 -> PlusMinusAssoc n1 -> PlusMinusAssoc (S n1) 
+    step sn1 (MultiAssoc ih) = MultiAssoc $ \sk sl -> case (sl %<= sk) of 
+      STrue -> start (((SS sn1) %+ sk) %- sl) 
+                 === ((SS (sn1 %+ sk)) %- sl) `because` minusCongL (plusSuccL sn1 sk) sl
+                 === (SS ((sn1 %+ sk) %- sl)) `because` minusSucc (sn1 %+ sk) sl Witness
+                 === undefined 
+
 witnessToRefl :: IsTrue a -> a :~: 'True
 witnessToRefl = \case
   Witness -> Refl

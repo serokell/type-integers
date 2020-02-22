@@ -509,7 +509,7 @@ plusMonotoneZ (SNeg m) (SPos n) (SPos p) NegLeqPos =
 
 instance IsCommutativeRing Integer where
   type Zero' = ('Pos 'Z)
-  type One' = ('Pos (S Z))
+  type One' = ('Pos ('S 'Z))
   type Inv m = Inverse m
 
   oneIsNotZero = \case {}
@@ -524,7 +524,11 @@ instance IsCommutativeRing Integer where
 
   zeroNeutral = zeroIdentity
 
-  inverseAxiom = inverseZero
+  inverseAxiom (SPos m) = inverseZero (SPos m)
+
+  -- oneNeutral :: forall z x. (IsInteger z) => Sing (x :: z) -> x * One' :~: x
+  oneNeutral (SPos m) = cong (Proxy @'Pos) (multOneR m) 
+  oneNeutral (SNeg m) = cong (Proxy @'Neg) (multOneR m)
 
   multRightDistrib (SPos l) (SPos m) (SPos n) = cong (Proxy @'Pos) (A.multPlusDistrib l m n)
   multRightDistrib (SNeg l) (SNeg m) (SNeg n) = cong (Proxy @'Pos) (A.multPlusDistrib l m n)
