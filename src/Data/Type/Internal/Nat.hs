@@ -95,7 +95,7 @@ plusMinusComm sn sk sl Witness = multiAssocProof (induction base step sn) sk sl
     step sn1 (MultiAssoc ih) = MultiAssoc $ \sk sl -> case (sl %<= sk) of 
       STrue -> start (((SS sn1) %+ sk) %- sl) 
                  === ((SS (sn1 %+ sk)) %- sl) `because` minusCongL (plusSuccL sn1 sk) sl
-                 === (SS ((sn1 %+ sk) %- sl)) `because` minusSucc (sn1 %+ sk) sl Witness
+                 === (SS ((sn1 %+ sk) %- sl)) `because` minusSucc (sn1 %+ sk) sl undefined
                  === undefined 
 
 witnessToRefl :: IsTrue a -> a :~: 'True

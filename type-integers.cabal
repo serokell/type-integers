@@ -29,6 +29,7 @@ library
   exposed-modules:
       Data.Type.Class.Arithmetic
       Data.Type.Integer
+      Data.Type.Order
   other-modules: 
       Data.Type.Internal.Integer
       Data.Type.Internal.Nat
