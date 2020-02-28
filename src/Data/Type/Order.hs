@@ -9,16 +9,14 @@ module Data.Type.Order where
 import Data.Kind                     (Type)
 import Data.Singletons.TH
 import Data.Type.Internal.Integer
-import Data.Type.Internal.Nat
 import Data.Type.Natural hiding (induction, one, sOne)
-import qualified Data.Type.Natural.Class.Arithmetic as A
 import qualified Data.Type.Natural.Class.Order as A
 
 import Data.Type.Integer
 
 import Prelude hiding (Integer)
 
-import Proof.Equational
+-- import Proof.Equational
 import Proof.Propositional
 
 import Unsafe.Coerce

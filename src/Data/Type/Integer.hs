@@ -17,7 +17,7 @@ import Data.Singletons.TH
 import Data.Type.Equality
 import Data.Type.Natural hiding (induction, one, sOne)
 import qualified Data.Type.Natural.Class.Arithmetic as A
-import Data.Kind                     (Type)
+-- import Data.Kind                     (Type)
 
 import Proof.Equational
 import Proof.Propositional
@@ -33,7 +33,7 @@ import Prelude hiding (Integer)
 -- Equality
 
 posNegZeroPostulate
-  :: Pos Z :~: Neg Z
+  :: 'Pos 'Z :~: 'Neg 'Z
 posNegZeroPostulate = unsafeCoerce Refl
 
 cong2
@@ -44,22 +44,22 @@ cong2
 cong2 _ Refl Refl = Refl
 
 posInjective
-  :: forall n m. Pos n :~: Pos m
+  :: forall n m. 'Pos n :~: 'Pos m
   -> n :~: m
 posInjective Refl = Refl
 
 posLemma
   :: forall n m. n :~: m
-  -> Pos n :~: Pos m
+  -> 'Pos n :~: 'Pos m
 posLemma Refl = Refl
 
 negLemma
   :: forall n m. n :~: m
-  -> Neg n :~: Neg m
+  -> 'Neg n :~: 'Neg m
 negLemma Refl = Refl
 
 negInjective
-  :: forall n m. Neg n :~: Neg m
+  :: forall n m. 'Neg n :~: 'Neg m
   -> n :~: m
 negInjective Refl = Refl
 
@@ -69,7 +69,7 @@ plusCongruence
   -> Sing p
   -> n :~: m
   -> n + p :~: m + p
-plusCongruence n m p Refl = Refl
+plusCongruence _ _ _ Refl = Refl
 
 plusCongruenceR
   :: forall (m :: Integer) (n :: Integer) (p :: Integer). Sing m
@@ -77,15 +77,15 @@ plusCongruenceR
   -> Sing p
   -> n :~: p
   -> m + n :~: m + p
-plusCongruenceR m n p Refl = Refl
+plusCongruenceR _ _ _ Refl = Refl
 
 plusCong'
   :: forall (n :: Nat) (m :: Nat) (p :: Nat). Sing n
   -> Sing m
   -> Sing p
   -> n + m :~: p
-  -> Pos n + Pos m :~: Pos p
-plusCong' n m p Refl = Refl
+  -> 'Pos n + 'Pos m :~: 'Pos p
+plusCong' _ _ _ Refl = Refl
 
 multCongInt
   :: forall (m :: Integer) (n :: Integer) (p :: Integer). Sing m
@@ -93,7 +93,7 @@ multCongInt
   -> Sing p
   -> m :~: n
   -> m * p :~: n * p
-multCongInt m n p Refl = Refl
+multCongInt _ _ _ Refl = Refl
 
 multCongInt'
   :: forall (m :: Integer) (n :: Integer) (p :: Integer). Sing m
@@ -101,13 +101,13 @@ multCongInt'
   -> Sing p
   -> n :~: p
   -> m * n :~: m * p
-multCongInt' m n p Refl = Refl
+multCongInt' _ _ _ Refl = Refl
 
 negInv
   :: forall n. Sing n
   -> Inverse (Inverse n) :~: n
-negInv (SPos n) = Refl
-negInv (SNeg n) = Refl
+negInv (SPos _) = Refl
+negInv (SNeg _) = Refl
 
 subTrivialLemma
   :: forall (m :: Nat). Sing m
@@ -124,29 +124,29 @@ inverseZero (SNeg m) = subTrivialLemma m
 absoluteIdem
   :: forall n. Sing n
   -> Absolute (Absolute n) :~: Absolute n
-absoluteIdem (SPos n) = Refl
-absoluteIdem (SNeg n) = Refl
+absoluteIdem (SPos _) = Refl
+absoluteIdem (SNeg _) = Refl
 
 zeroIdentity
   :: forall (m :: Integer). Sing m
-  -> Pos Z + m :~: m
-zeroIdentity (SPos n) = Refl
+  -> 'Pos 'Z + m :~: m
+zeroIdentity (SPos _) = Refl
 zeroIdentity (SNeg SZ) = posNegZeroPostulate
-zeroIdentity (SNeg (SS n)) = Refl
+zeroIdentity (SNeg (SS _)) = Refl
 
 zeroIdentityR
   :: forall (m :: Integer). Sing m
-  -> m + Pos Z :~: m
+  -> m + 'Pos 'Z :~: m
 zeroIdentityR (SPos SZ) = Refl
 zeroIdentityR (SPos (SS n)) =
   plusCong' (SS n) SZ (SS n) (plusZeroR (SS n))
 zeroIdentityR (SNeg SZ) =
   posNegZeroPostulate
-zeroIdentityR (SNeg (SS n)) = Refl
+zeroIdentityR (SNeg (SS _)) = Refl
 
 zeroIdentityRNeg
   :: forall (m :: Integer). Sing m
-  -> m + Neg Z :~: m
+  -> m + 'Neg 'Z :~: m
 zeroIdentityRNeg m =
   trans
     (plusCongruenceR m (SNeg SZ) (SPos SZ) $ sym posNegZeroPostulate) $
@@ -158,7 +158,7 @@ subLemma
   -> Sing p
   -> n :~: p
   -> Sub m n :~: Sub m p
-subLemma m n p Refl = Refl
+subLemma _ _ _ Refl = Refl
 
 subLemma'
   :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
@@ -166,7 +166,7 @@ subLemma'
   -> Sing p
   -> m :~: n
   -> Sub m p :~: Sub n p
-subLemma' m n p Refl = Refl
+subLemma' _ _ _ Refl = Refl
 
 commZ
   :: forall (m :: Integer) (n :: Integer). Sing m
@@ -174,16 +174,16 @@ commZ
   -> m + n :~: n + m
 commZ (SPos m) (SPos n) = cong (Proxy @'Pos) (plusComm m n)
 commZ (SNeg m) (SNeg n) = cong (Proxy @'Neg) (plusComm m n)
-commZ (SPos m) (SNeg n) = Refl
-commZ (SNeg m) (SPos n) = Refl
+commZ (SPos _) (SNeg _) = Refl
+commZ (SNeg _) (SPos _) = Refl
 
 distrSub
   :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
   -> Sing n
   -> Sing p
-  -> (Sub m n + Pos p) :~: Sub (m + p) n
+  -> (Sub m n + 'Pos p) :~: Sub (m + p) n
 distrSub _ SZ SZ = Refl
-distrSub _ SZ (SS p) = Refl
+distrSub _ SZ (SS _) = Refl
 distrSub m (SS n) SZ =
   trans
     (zeroIdentityR $ sSub m (SS n))
@@ -194,7 +194,7 @@ distrSubLNeg
   :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
   -> Sing n
   -> Sing p
-  -> Sub m n + Neg p :~: Sub m (n + p)
+  -> Sub m n + 'Neg p :~: Sub m (n + p)
 distrSubLNeg _ SZ SZ = Refl
 distrSubLNeg _ SZ (SS _) = Refl
 distrSubLNeg m (SS n) SZ =
@@ -207,7 +207,7 @@ distrNeg
   :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
   -> Sing n
   -> Sing p
-  -> Neg m + Sub n p :~: Sub n (m + p)
+  -> 'Neg m + Sub n p :~: Sub n (m + p)
 distrNeg m n p =
   start (SNeg m %+ sSub n p)
   === (sSub n p %+ SNeg m) `because` commZ (SNeg m) (sSub n p)
@@ -218,7 +218,7 @@ distrSubL
   :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
   -> Sing n
   -> Sing p
-  -> Sub m n + Pos p :~: Sub (m + p) n
+  -> Sub m n + 'Pos p :~: Sub (m + p) n
 distrSubL _ SZ SZ = Refl
 distrSubL _ SZ (SS _) = Refl
 distrSubL m (SS n) SZ =
@@ -232,7 +232,7 @@ distrSubR
   :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
   -> Sing n
   -> Sing p
-  -> Pos m + Sub n p :~: Sub (m + n) p
+  -> 'Pos m + Sub n p :~: Sub (m + n) p
 distrSubR m n p =
   start (SPos m %+ sSub n p)
   === sSub n p %+ SPos m `because` commZ (SPos m) (sSub n p)
@@ -276,8 +276,8 @@ plusAssocZ (SNeg m) (SPos n) (SNeg p) =
 zeroMult
   :: forall (m :: Integer). Sing m
   -> 'Pos 'Z * m :~: 'Pos 'Z
-zeroMult (SPos maxBound) = Refl
-zeroMult (SNeg m) = sym posNegZeroPostulate
+zeroMult (SPos _) = Refl
+zeroMult (SNeg _) = sym posNegZeroPostulate
 
 zeroMult'
   :: forall (m :: Integer). Sing m
@@ -316,7 +316,7 @@ subMinus
   -> Sing b
   -> Sub a b :~: 'Neg (b - a)
 subMinus SZ SZ = unsafeCoerce Refl
-subMinus SZ (SS n) = Refl
+subMinus SZ (SS _) = Refl
 subMinus (SS n) (SS m) = subMinus n m
 
 subMinus2
@@ -324,34 +324,43 @@ subMinus2
   -> Sing b
   -> Sub a b :~: 'Pos (a - b)
 subMinus2 Witness SZ SZ = Refl
-subMinus2 Witness (SS n) SZ = Refl
+subMinus2 Witness (SS _) SZ = Refl
 subMinus2 Witness (SS n) (SS m) = subMinus2 Witness n m
 
---- orphane instances 
+--- orphan instances 
 
 instance IsCommutativeRing Integer where
   type Zero' = ('Pos 'Z)
   type One' = ('Pos ('S 'Z))
   type Inv m = Inverse m
 
+  oneIsNotZero :: forall (x :: Integer) y. (x ~ One', y ~ ('Pos 'Z)) => (x :~: y) -> Void
   oneIsNotZero = \case {}
 
+  associativity :: Sing (x :: Integer) -> Sing y -> Sing n -> (x + y) + n :~: x + (y + n)
   associativity = plusAssocZ
-
+  
+  commutativity :: Sing (x :: Integer) -> Sing y -> x + y :~: y + x
   commutativity = commZ
-
+  
+  associativityProduct :: Sing (m :: Integer) -> Sing n -> Sing p -> (m * n) * p :~: m * (n * p)
   associativityProduct = prodAssoc
-
+  
+  commutativityProduct :: Sing (m :: Integer) -> Sing n -> m * n :~: n * m
   commutativityProduct = prodComm
 
+  zeroNeutral :: Sing (x :: Integer) -> Zero' + x :~: x
   zeroNeutral = zeroIdentity
 
+  inverseAxiom :: Sing (x :: Integer) -> (x + Inv x) :~: Zero'
   inverseAxiom (SPos m) = inverseZero (SPos m)
 
-  -- oneNeutral :: forall z x. (IsInteger z) => Sing (x :: z) -> x * One' :~: x
+  oneNeutral :: Sing (x :: Integer) -> x * One' :~: x
   oneNeutral (SPos m) = cong (Proxy @'Pos) (multOneR m) 
   oneNeutral (SNeg m) = cong (Proxy @'Neg) (multOneR m)
 
+  multRightDistrib :: Sing (x :: Integer) -> Sing (y :: Integer) -> Sing (u :: Integer)
+    -> (x * (y + u)) :~: ((x * y) + (x * u))
   multRightDistrib (SPos l) (SPos m) (SPos n) = cong (Proxy @'Pos) (A.multPlusDistrib l m n)
   multRightDistrib (SNeg l) (SNeg m) (SNeg n) = cong (Proxy @'Pos) (A.multPlusDistrib l m n)
   multRightDistrib (SNeg l) (SPos m) (SPos n) = cong (Proxy @'Neg) (A.multPlusDistrib l m n)
@@ -388,15 +397,15 @@ instance IsCommutativeRing Integer where
                   === (SNeg ((l %* n) %- (l %* m))) `because` cong (Proxy @'Neg) (withWitness (notLeqToLeq n m) $ multMinusDistrib n m l)
                   === ((l %* m) `sSub` (l %* n)) `because` (sym $ withRefl (multLeq (notLeqToLeq n m) l m n) $ subMinus (l %* m) (l %* n))
                   === ((sl %* sm) %+ (sl %* sn)) `because` Refl
-  multRightDistrib sl sm@(SPos m) sn@(SNeg n) =
+  multRightDistrib sl sm@(SPos _) sn@(SNeg _) =
     start (sl %* (sm %+ sn))
       === (sl %* (sn %+ sm)) `because` multCongR sl (commutativity sm sn)
       === ((sl %* sn) %+ (sl %* sm)) `because` multRightDistrib sl sn sm
       === ((sl %* sm) %+ (sl %* sn)) `because` commutativity (sl %* sn) (sl %* sm)
 
 instance IsInteger Integer where
-  type Signum ('Pos n) = P
-  type Signum ('Neg n) = N
+  type Signum ('Pos n) = 'P
+  type Signum ('Neg n) = 'N
   type Absolute'' (_ n) = n
 
   induction base _ _ (SPos SZ) = base

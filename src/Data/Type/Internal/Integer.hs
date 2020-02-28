@@ -37,13 +37,13 @@ singletons [d|
     :: Sign
     -> Sign
   opposite P = N
-  opposine N = P
+  opposite N = P
 
   signZ
     :: Integer
     -> Integer
-  signZ (Pos (S n)) = Pos (S Z)
-  signZ (Neg (S n)) = Neg (S Z)
+  signZ (Pos (S _)) = Pos (S Z)
+  signZ (Neg (S _)) = Neg (S Z)
   signZ (Pos Z) = Pos Z
   signZ (Neg Z) = Pos Z
 
@@ -51,7 +51,7 @@ singletons [d|
     :: Integer
     -> Sign
   signOf (Pos _) = P
-  singOf (Neg _) = N
+  signOf (Neg _) = N
 
   signMult
     :: Sign
@@ -145,12 +145,12 @@ singletons [d|
         False -> Neg $ fromInteger n
   |]
 
-natToZ :: Sing n -> Sing (Pos n)
+natToZ :: Sing n -> Sing ('Pos n)
 natToZ SZ = SPos SZ
 natToZ (SS n) = SPos (SS n)
 
-zToNat :: Sing (Pos n) -> Sing n
+zToNat :: Sing ('Pos n) -> Sing n
 zToNat (SPos n) = n
 
-zToNatNeg :: Sing (Neg n) -> Sing n
+zToNatNeg :: Sing ('Neg n) -> Sing n
 zToNatNeg (SNeg n) = n
