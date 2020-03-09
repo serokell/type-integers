@@ -28,6 +28,15 @@ data ZLeq (m :: Integer) (n :: Integer) :: Type where
   NegLeqPos :: forall m n. ZLeq (Neg m) (Pos n)
   PosLeqPos :: forall m n. IsTrue (m <= n) -> ZLeq (Pos m) (Pos n)
 
+leqIdLemma
+  :: forall (m :: Integer) (n :: Integer) (p :: Integer). Sing m
+  -> Sing n
+  -> Sing p
+  -> IsTrue (m <= n)
+  -> m :~: p
+  -> IsTrue (p <= n)
+leqIdLemma m n p Witness Refl = Witness
+
 leqNatZ
   :: forall a b. Sing (Pos a)
   -> Sing (Pos b)
@@ -162,6 +171,38 @@ totality sing1 sing2 =
         STrue -> Left $ PosLeqPos $ unsafeCoerce Witness
         SFalse -> Right $ PosLeqPos $ unsafeCoerce Witness
 
+subLemmaZero
+  :: forall (m :: Nat). Sing m
+  -> Sub 'Z m :~: Neg m
+subLemmaZero SZ = posNegZeroPostulate
+subLemmaZero (SS m) = Refl
+
+subMonoR'
+  :: forall (m :: Nat) (n :: Nat). Sing m
+  -> Sing n
+  -> IsTrue (m <= n)
+  -> ZLeq (Sub 'Z n) (Sub 'Z m)
+subMonoR' m n Witness = undefined
+
+subMonoR
+  :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
+  -> Sing n
+  -> Sing p
+  -> IsTrue (m <= n)
+  -> ZLeq (Sub p n) (Sub p m)
+subMonoR m n SZ Witness = subMonoR' m n Witness
+subMonoR m n (SS p) Witness = undefined
+
+subMono
+  :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
+  -> Sing n
+  -> Sing p
+  -> IsTrue (m <= n)
+  -> ZLeq (Sub m p) (Sub n p)
+subMono m n SZ Witness = PosLeqPos Witness
+subMono SZ SZ (SS p) Witness = leqReflZ (SNeg (SS p))
+subMono (SS m) (SS n) (SS p) Witness = subMono m n p Witness
+
 subLemmaZ
   :: forall (m :: Nat) (n :: Nat). Sing m
   -> Sing n
@@ -181,7 +222,9 @@ subLemmaRight
 subLemmaRight SZ n = NegLeqPos
 subLemmaRight (SS m) SZ = NegLeqNeg (A.leqRefl (SS m))
 subLemmaRight (SS m) (SS n) =
-  undefined
+  leqTransZ (SNeg (SS m)) (SNeg m) (sSub n m) 
+  (NegLeqNeg $ leqSuccStepR m m $ A.leqRefl m) 
+  (subLemmaRight m n)
 
 plusMonotoneZ
   :: forall (m :: Integer) (n :: Integer) (p :: Integer). Sing m
@@ -191,10 +234,10 @@ plusMonotoneZ
   -> ZLeq (m + p) (n + p)
 plusMonotoneZ (SPos m) (SPos n) (SPos p) (PosLeqPos witness) =
   PosLeqPos (plusMonotoneL m n p witness)
-plusMonotoneZ (SPos m) (SPos n) (SNeg p) (PosLeqPos witness) =
-  undefined
 plusMonotoneZ (SNeg m) (SNeg n) (SNeg p) (NegLeqNeg witness) =
   NegLeqNeg (plusMonotoneL n m p witness)
+plusMonotoneZ (SPos m) (SPos n) (SNeg p) (PosLeqPos witness) =
+  subMono m n p witness
 plusMonotoneZ (SNeg m) (SPos n) (SNeg p) NegLeqPos =
   undefined
 plusMonotoneZ (SNeg m) (SPos n) (SPos p) NegLeqPos =

@@ -28,6 +28,7 @@ source-repository head
 library
   exposed-modules:
       Data.Type.Class.Arithmetic
+      Data.Type.Class.Order
       Data.Type.Integer
       Data.Type.Order
   other-modules: 

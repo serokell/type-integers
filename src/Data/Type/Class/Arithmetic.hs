@@ -9,6 +9,7 @@
 module Data.Type.Class.Arithmetic where
 
 import Data.Singletons.TH
+import Data.Singletons.Prelude.Num
 import Data.Type.Natural hiding (induction)
 import Unsafe.Coerce
 
@@ -52,6 +53,9 @@ class IsCommutativeRing z where
     :: forall (m :: z) (n :: z). Sing m
     -> Sing n
     -> m * n :~: n * m
+  invPostulate
+    :: forall (m :: z). Sing m
+    -> (Inv m) :~: (Negate m)
 
 class IsCommutativeRing z => IsInteger z where
   type Signum (m :: z) :: Sign
