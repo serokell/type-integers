@@ -41,11 +41,11 @@ packages:
 #
 extra-deps:
   - equational-reasoning-0.6.0.1
-  - type-natural-0.8.3.1
   - ghc-typelits-presburger-0.3.0.0
   - ghc-tcplugins-extra-0.3.2
   - singletons-presburger-0.3.0.0
-
+  - git: https://github.com/Haskell-mouse/type-natural
+    commit: af96bcf869e3b852da113ca3748c6c81246fb32d
 # Override default flag values for local packages and extra-deps
 # flags: {}
 

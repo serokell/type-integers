@@ -20,7 +20,7 @@ class IsCommutativeRing z where
   type One' :: z
   type Inv (m :: z) :: z
 
-  oneIsNotZero :: One' :~: Zero' -> Void
+  oneIsNotZero :: forall (x :: z) (y :: z). (y ~ Zero', x ~ One') => x :~: y -> Void
   associativity
     :: Sing (x :: z)
     -> Sing y
