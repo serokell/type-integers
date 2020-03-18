@@ -22,9 +22,9 @@ import Proof.Propositional
 import Unsafe.Coerce
 
 data ZLeq (m :: Integer) (n :: Integer) :: Type where
-  NegLeqNeg :: forall m n. IsTrue (m <= n) -> ZLeq (Neg n) (Neg m)
-  NegLeqPos :: forall m n. ZLeq (Neg m) (Pos n)
-  PosLeqPos :: forall m n. IsTrue (m <= n) -> ZLeq (Pos m) (Pos n)
+  NegLeqNeg :: forall m n. IsTrue (m <= n) -> ZLeq ('Neg n) ('Neg m)
+  NegLeqPos :: forall m n. ZLeq ('Neg m) ('Pos n)
+  PosLeqPos :: forall m n. IsTrue (m <= n) -> ZLeq ('Pos m) ('Pos n)
 
 leqIdLemma
   :: forall (m :: Integer) (n :: Integer) (p :: Integer). Sing m
@@ -33,26 +33,24 @@ leqIdLemma
   -> IsTrue (m <= n)
   -> m :~: p
   -> IsTrue (p <= n)
-leqIdLemma m n p Witness Refl = Witness
+leqIdLemma _ _ _ Witness Refl = Witness
 
 leqNatZ
-  :: forall a b. Sing (Pos a)
-  -> Sing (Pos b)
-  -> IsTrue (Pos a <= Pos b)
+  :: forall a b. Sing ('Pos a)
+  -> Sing ('Pos b)
+  -> IsTrue ('Pos a <= 'Pos b)
   -> IsTrue (a <= b)
-leqNatZ sing1 sing2 isTr =
-  case isTr of
-    Witness -> Witness
+leqNatZ _ _ Witness = Witness
 
 leqNatZNeg
-  :: forall a b. Sing (Neg a)
-  -> Sing (Neg b)
-  -> IsTrue (Neg a <= Neg b)
+  :: forall a b. Sing ('Neg a)
+  -> Sing ('Neg b)
+  -> IsTrue ('Neg a <= 'Neg b)
   -> IsTrue (b <= a)
-leqNatZNeg sing1 sing2 Witness = Witness
+leqNatZNeg _ _ Witness = Witness
 
 converseLeq
-  :: forall m n. ZLeq (Pos m) (Pos n)
+  :: forall m n. ZLeq ('Pos m) ('Pos n)
   -> IsTrue (m <= n)
 converseLeq (PosLeqPos witness) = witness
 
@@ -61,7 +59,7 @@ leqReflexiveZ
   -> Sing n
   -> m :~: n
   -> ZLeq m n
-leqReflexiveZ m n Refl =
+leqReflexiveZ m _ Refl =
   case m of
     SPos n -> PosLeqPos $ A.leqRefl n
     SNeg n -> NegLeqNeg $ A.leqRefl n
@@ -78,8 +76,8 @@ leqTransZ
   -> ZLeq m n
   -> ZLeq n p
   -> ZLeq m p
-leqTransZ m n p NegLeqPos (PosLeqPos witness') = NegLeqPos
-leqTransZ m n p (NegLeqNeg witness) NegLeqPos = NegLeqPos
+leqTransZ _ _ _ NegLeqPos (PosLeqPos _) = NegLeqPos
+leqTransZ _ _ _ (NegLeqNeg _) NegLeqPos = NegLeqPos
 leqTransZ m n p (PosLeqPos witness) (PosLeqPos witness') =
   PosLeqPos witness''
   where
@@ -94,26 +92,26 @@ leqTransZ m n p (NegLeqNeg witness) (NegLeqNeg witness') =
     updateWitness' = leqNatZNeg n p witness'
 
 leqNatZConv
-  :: forall a b. Sing (Pos a)
-  -> Sing (Pos b)
+  :: forall a b. Sing ('Pos a)
+  -> Sing ('Pos b)
   -> IsTrue (a <= b)
-  -> IsTrue (Pos a <= Pos b)
-leqNatZConv sing1 sing2 Witness = Witness
+  -> IsTrue ('Pos a <= 'Pos b)
+leqNatZConv _ _ Witness = Witness
 
 leqNatZConvNeg
-  :: forall a b. Sing (Neg a)
-  -> Sing (Neg b)
+  :: forall a b. Sing ('Neg a)
+  -> Sing ('Neg b)
   -> IsTrue (a <= b)
-  -> IsTrue (Neg b <= Neg a)
-leqNatZConvNeg sing1 sing2 Witness = Witness
+  -> IsTrue ('Neg b <= 'Neg a)
+leqNatZConvNeg _ _ Witness = Witness
 
 leqTransLemma'
-  :: forall a b c. Sing (Pos a)
-  -> Sing (Pos b)
-  -> Sing (Pos c)
-  -> IsTrue (Pos a <= Pos b)
-  -> IsTrue (Pos b <= Pos c)
-  -> IsTrue (Pos a <= Pos c)
+  :: forall a b c. Sing ('Pos a)
+  -> Sing ('Pos b)
+  -> Sing ('Pos c)
+  -> IsTrue ('Pos a <= 'Pos b)
+  -> IsTrue ('Pos b <= 'Pos c)
+  -> IsTrue ('Pos a <= 'Pos c)
 leqTransLemma' s1 s2 s3 isTr1 isTr2 =
   leqNatZConv s1 s3 $ A.leqTrans natS1 natS2 natS3 witness witness'
   where

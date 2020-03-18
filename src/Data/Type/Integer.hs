@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE GADTs #-}
@@ -202,6 +204,7 @@ distrSubLNeg m (SS n) SZ =
     (zeroIdentityRNeg $ sSub m (SS n))
     (subLemma m (SS n) (SS n %+ SZ) (sym $ plusZeroR (SS n)))
 distrSubLNeg (SS m) (SS n) (SS p) = unsafeCoerce $ distrSubLNeg m n p
+distrSubLNeg SZ (SS _) (SS _) = undefined
 
 distrNeg
   :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
@@ -354,6 +357,7 @@ instance IsCommutativeRing Integer where
 
   inverseAxiom :: Sing (x :: Integer) -> (x + Inv x) :~: Zero'
   inverseAxiom (SPos m) = inverseZero (SPos m)
+  inverseAxiom (SNeg m) = inverseZero (SPos m)
 
   oneNeutral :: Sing (x :: Integer) -> x * One' :~: x
   oneNeutral (SPos m) = cong (Proxy @'Pos) (multOneR m) 
