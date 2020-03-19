@@ -55,7 +55,7 @@ class IsCommutativeRing z where
     -> m * n :~: n * m
   invPostulate
     :: forall (m :: z). Sing m
-    -> (Inv m) :~: (Negate m)
+    -> Inv m :~: Negate m
 
 class IsCommutativeRing z => IsInteger z where
   type Signum (m :: z) :: Sign

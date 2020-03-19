@@ -407,6 +407,8 @@ instance IsCommutativeRing Integer where
       === ((sl %* sn) %+ (sl %* sm)) `because` multRightDistrib sl sn sm
       === ((sl %* sm) %+ (sl %* sn)) `because` commutativity (sl %* sn) (sl %* sm)
 
+  invPostulate = unsafeCoerce
+
 instance IsInteger Integer where
   type Signum ('Pos n) = 'P
   type Signum ('Neg n) = 'N

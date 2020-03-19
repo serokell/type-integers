@@ -1,6 +1,8 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -8,6 +10,8 @@ module Data.Type.Order where
     
 import Data.Kind                     (Type)
 import Data.Singletons.TH
+import Data.Void
+
 import Data.Type.Internal.Integer
 import Data.Type.Natural hiding (induction, one, sOne)
 import qualified Data.Type.Natural.Class.Order as A
@@ -25,6 +29,11 @@ data ZLeq (m :: Integer) (n :: Integer) :: Type where
   NegLeqNeg :: forall m n. IsTrue (m <= n) -> ZLeq ('Neg n) ('Neg m)
   NegLeqPos :: forall m n. ZLeq ('Neg m) ('Pos n)
   PosLeqPos :: forall m n. IsTrue (m <= n) -> ZLeq ('Pos m) ('Pos n)
+
+posNegAbsurd
+  :: forall (m :: Nat) (n :: Nat).
+  ZLeq ('Pos m) ('Neg n) -> Void
+posNegAbsurd = \case { }
 
 leqIdLemma
   :: forall (m :: Integer) (n :: Integer) (p :: Integer). Sing m
@@ -122,12 +131,12 @@ leqTransLemma' s1 s2 s3 isTr1 isTr2 =
     witness' = leqNatZ s2 s3 isTr2
 
 leqTransLemmaNeg
-  :: Sing (Neg a)
-  -> Sing (Neg b)
-  -> Sing (Neg c)
-  -> IsTrue (Neg a <= Neg b)
-  -> IsTrue (Neg b <= Neg c)
-  -> IsTrue (Neg a <= Neg c)
+  :: Sing ('Neg a)
+  -> Sing ('Neg b)
+  -> Sing ('Neg c)
+  -> IsTrue ('Neg a <= 'Neg b)
+  -> IsTrue ('Neg b <= 'Neg c)
+  -> IsTrue ('Neg a <= 'Neg c)
 leqTransLemmaNeg s1 s2 s3 isTr1 isTr2 =
   leqNatZConvNeg s3 s1 $ A.leqTrans natS3 natS2 natS1 witness' witness
   where
@@ -147,6 +156,7 @@ antiSymmetry sing1 sing2 (NegLeqNeg witness1) (NegLeqNeg witness2) =
   negLemma $ leqAntisymm (zToNatNeg sing1) (zToNatNeg sing2) witness2 witness1
 antiSymmetry sing1 sing2 (PosLeqPos witness1) (PosLeqPos witness2) =
   posLemma $ leqAntisymm (zToNat sing1) (zToNat sing2) witness1 witness2
+antiSymmetry _ _ NegLeqPos p = (absurd . posNegAbsurd) p
 
 totality
   :: forall a b. Sing a
@@ -154,31 +164,31 @@ totality
   -> Either (ZLeq a b) (ZLeq b a)
 totality sing1 sing2 =
   case (sing1, sing2) of
-    (SNeg n1, SNeg n2) ->
-      case n1 %<= n2 of
+    (SNeg n, SNeg m) ->
+      case n %<= m of
         STrue -> Right $ NegLeqNeg $ unsafeCoerce Witness
         SFalse -> Left $ NegLeqNeg $ unsafeCoerce Witness
-    (SNeg n1, SPos n2) ->
+    (SNeg _, SPos _) ->
       Left NegLeqPos
-    (SPos n1, SNeg n2) ->
+    (SPos _, SNeg _) ->
       Right NegLeqPos
-    (SPos n1, SPos n2) ->
-      case n1 %<= n2 of
+    (SPos n, SPos m) ->
+      case n %<= m of
         STrue -> Left $ PosLeqPos $ unsafeCoerce Witness
         SFalse -> Right $ PosLeqPos $ unsafeCoerce Witness
 
 subLemmaZero
   :: forall (m :: Nat). Sing m
-  -> Sub 'Z m :~: Neg m
+  -> Sub 'Z m :~: 'Neg m
 subLemmaZero SZ = posNegZeroPostulate
-subLemmaZero (SS m) = Refl
+subLemmaZero (SS _) = Refl
 
 subMonoR'
   :: forall (m :: Nat) (n :: Nat). Sing m
   -> Sing n
   -> IsTrue (m <= n)
   -> ZLeq (Sub 'Z n) (Sub 'Z m)
-subMonoR' m n Witness = undefined
+subMonoR' _ _ Witness = undefined
 
 subMonoR
   :: forall (m :: Nat) (n :: Nat) (p :: Nat). Sing m
@@ -195,14 +205,23 @@ subMono
   -> Sing p
   -> IsTrue (m <= n)
   -> ZLeq (Sub m p) (Sub n p)
-subMono m n SZ Witness = PosLeqPos Witness
-subMono SZ SZ (SS p) Witness = leqReflZ (SNeg (SS p))
-subMono (SS m) (SS n) (SS p) Witness = subMono m n p Witness
+subMono _ _ SZ Witness = 
+  PosLeqPos Witness
+subMono SZ SZ (SS p) Witness = 
+  leqReflZ (SNeg (SS p))
+subMono (SS m) (SS n) (SS p) Witness = 
+  subMono m n p Witness
+subMono SZ n'@(SS n) p'@(SS p) Witness =
+  case sSub n' p' of
+    (SPos _) -> NegLeqPos
+    (SNeg _) -> undefined
+subMono m@(SS _) SZ (SS _) w = 
+  absurd $ succLeqZeroAbsurd m w
 
 subLemmaZ
   :: forall (m :: Nat) (n :: Nat). Sing m
   -> Sing n
-  -> ZLeq (Sub m n) (Pos m)
+  -> ZLeq (Sub m n) ('Pos m)
 subLemmaZ m SZ =
   leqReflZ (SPos m)
 subLemmaZ SZ (SS _) =
@@ -214,8 +233,8 @@ subLemmaZ (SS m) (SS n) =
 subLemmaRight
   :: forall (m :: Nat) (n :: Nat). Sing m
   -> Sing n
-  -> ZLeq (Neg m) (Sub n m)
-subLemmaRight SZ n = NegLeqPos
+  -> ZLeq ('Neg m) (Sub n m)
+subLemmaRight SZ _ = NegLeqPos
 subLemmaRight (SS m) SZ = NegLeqNeg (A.leqRefl (SS m))
 subLemmaRight (SS m) (SS n) =
   leqTransZ (SNeg (SS m)) (SNeg m) (sSub n m) 
@@ -234,7 +253,13 @@ plusMonotoneZ (SNeg m) (SNeg n) (SNeg p) (NegLeqNeg witness) =
   NegLeqNeg (plusMonotoneL n m p witness)
 plusMonotoneZ (SPos m) (SPos n) (SNeg p) (PosLeqPos witness) =
   subMono m n p witness
-plusMonotoneZ (SNeg m) (SPos n) (SNeg p) NegLeqPos =
-  undefined
-plusMonotoneZ (SNeg m) (SPos n) (SPos p) NegLeqPos =
-  undefined
+plusMonotoneZ m'@(SNeg m) n'@(SPos n) p'@(SNeg p) NegLeqPos =
+  case (m' %+ p', n' %+ p') of
+    (SNeg q, SNeg s) -> NegLeqNeg _
+    (SNeg _, SPos _) -> NegLeqPos
+plusMonotoneZ m'@(SNeg m) n'@(SPos n) p'@(SPos p) NegLeqPos =
+  case (m' %+ p', n' %+ p') of
+    (SPos _, _) -> PosLeqPos _
+    (SNeg _, SPos _) -> NegLeqPos
+plusMonotoneZ (SPos m) (SNeg n) _ p = absurd $ posNegAbsurd p
+plusMonotoneZ (SNeg m) (SNeg n) (SPos p) (NegLeqNeg Witness) = undefined
