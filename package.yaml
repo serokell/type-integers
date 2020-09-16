@@ -23,9 +23,6 @@ dependencies:
 
 library:
   source-dirs: src
-  exposed-modules:
-    - Lib
-    - Properties
   dependencies:
     - equational-reasoning
     - singletons
