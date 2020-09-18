@@ -1,0 +1,61 @@
+# Default stylish-haskell configuration file in Serokell. It's based on default
+# config provided by `stylish-haskell --defaults` but has some changes
+# =============================================================================
+
+steps:
+  - simple_align:
+      cases: true
+      top_level_patterns: true
+      records: true
+
+  - imports:
+      align: none
+      list_align: after_alias
+
+      # Note: we intentionally disable it to make diffs smaller and reduce
+      # number of merge conflicts.
+      pad_module_names: false
+
+      long_list_align: inline
+      empty_list_align: inherit
+      list_padding: 4
+      separate_lists: true
+      space_surround: false
+
+  - language_pragmas:
+      style: vertical
+      remove_redundant: true
+
+  - trailing_whitespace: {}
+
+# Note: we set it to 100 because it reduces verbosity of diffs and
+# number of conflicts when we merge something.
+columns: 100
+
+newline: native
+
+language_extensions:
+  - BangPatterns
+  - ConstraintKinds
+  - DataKinds
+  - DefaultSignatures
+  - DeriveDataTypeable
+  - DeriveGeneric
+  - FlexibleContexts
+  - FlexibleInstances
+  - FunctionalDependencies
+  - GADTs
+  - GeneralizedNewtypeDeriving
+  - LambdaCase
+  - MultiParamTypeClasses
+  - MultiWayIf
+  - NoImplicitPrelude
+  - OverloadedStrings
+  - RecordWildCards
+  - ScopedTypeVariables
+  - StandaloneDeriving
+  - TemplateHaskell
+  - TupleSections
+  - TypeApplications
+  - TypeFamilies
+  - ViewPatterns
