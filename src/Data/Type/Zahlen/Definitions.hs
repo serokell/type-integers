@@ -1,35 +1,33 @@
---{-# OPTIONS_GHC -ddump-splices #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE AllowAmbiguousTypes#-}
-{-# LANGUAGE EmptyCase #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE MultiParamTypeClasses#-}
-{-# LANGUAGE NoStarIsType #-}
-{-# LANGUAGE QuantifiedConstraints #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes      #-}
+{-# LANGUAGE DataKinds                #-}
+{-# LANGUAGE EmptyCase                #-}
+{-# LANGUAGE FlexibleInstances        #-}
+{-# LANGUAGE GADTs                    #-}
+{-# LANGUAGE InstanceSigs             #-}
+{-# LANGUAGE MultiParamTypeClasses    #-}
+{-# LANGUAGE NoStarIsType             #-}
+{-# LANGUAGE PolyKinds                #-}
+{-# LANGUAGE QuantifiedConstraints    #-}
+{-# LANGUAGE ScopedTypeVariables      #-}
+{-# LANGUAGE StandaloneDeriving       #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE TemplateHaskell          #-}
+{-# LANGUAGE TypeApplications         #-}
+{-# LANGUAGE TypeFamilies             #-}
+{-# LANGUAGE TypeOperators            #-}
+{-# LANGUAGE UndecidableInstances     #-}
 
-module Lib where
+module Data.Type.Zahlen.Definitions where
 
---import Data.Promotion.Prelude.Enum
-import Data.Type.Natural
 import Data.Singletons.Prelude
 import Data.Singletons.Prelude.Enum
 import Data.Singletons.TH
+import Data.Type.Natural
 import Data.Typeable
-import Data.Type.Equality
 
 import Unsafe.Coerce
 
-import Data.Kind                    (Type, Constraint)
+import Data.Kind (Constraint, Type)
 
 singletons [d|
   data Zahlen = Pos Nat | Neg Nat
@@ -54,8 +52,8 @@ singletons [d|
     -> Zahlen
   signZ (Pos (S n)) = Pos (S Z)
   signZ (Neg (S n)) = Neg (S Z)
-  signZ (Pos Z) = Pos Z
-  signZ (Neg Z) = Pos Z
+  signZ (Pos Z)     = Pos Z
+  signZ (Neg Z)     = Pos Z
 
   signOf
     :: Zahlen
@@ -114,7 +112,7 @@ singletons [d|
 
     toEnum n =
       case (n >= 0) of
-        True ->  Pos $ toEnum n
+        True  ->  Pos $ toEnum n
         False -> Neg $ toEnum n
   |]
 
@@ -123,8 +121,8 @@ singletons [d|
     :: Nat
     -> Nat
     -> Zahlen
-  sub m Z = Pos m
-  sub Z (S n) = Neg (S n)
+  sub m Z         = Pos m
+  sub Z (S n)     = Neg (S n)
   sub (S m) (S n) = m `sub` n
   |]
 
@@ -148,7 +146,7 @@ singletons [d|
 
     fromInteger n =
       case (n >= 0) of
-        True -> Pos $ fromInteger n
+        True  -> Pos $ fromInteger n
         False -> Neg $ fromInteger n
   |]
 
@@ -197,7 +195,7 @@ class IsCommutativeRing z => IsInteger z where
   zeroEquality = unsafeCoerce Refl
   zeroEquality' :: Absolute'' x :~: Absolute'' y -> Absolute'' x :~: 'Z -> x :~: y
   zeroEquality' Refl Refl = unsafeCoerce Refl
-  zeroIdentity :: forall x m. Absolute'' x :~: 'Z -> x + m :~: m
+--  zeroIdentity :: forall x m. Absolute'' x :~: 'Z -> x + m :~: m
 --  zeroIdentity = Refl
 
 instance IsInteger Zahlen where
@@ -206,7 +204,7 @@ instance IsInteger Zahlen where
   type Absolute'' (_ m) = m
 
 natToZ :: Sing n -> Sing (Pos n)
-natToZ SZ = SPos SZ
+natToZ SZ     = SPos SZ
 natToZ (SS n) = SPos (SS n)
 
 zToNat :: Sing (Pos n) -> Sing n

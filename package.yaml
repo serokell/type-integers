@@ -1,0 +1,29 @@
+name:        type-integers
+version:     0.1.0.0
+github:      "serokell/type-integers"
+license:     BSD3
+author:     "Author name here"
+maintainer: "example@example.com"
+copyright:  "2020 Author name here"
+
+synopsis:   Type-level integers and proofs of their properties.
+category:   Math
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description: Please see the README on GitHub at <https://github.com/serokell/type-integers#readme>.
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+  dependencies:
+    - equational-reasoning
+    - singletons
+    - type-natural
