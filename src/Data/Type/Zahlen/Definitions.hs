@@ -40,13 +40,17 @@ deriving instance Typeable 'Pos
 singletons [d|
   data Sign = P | N
     deriving (Show, Eq)
+  |]
 
+singletons [d|
   opposite
     :: Sign
     -> Sign
   opposite P = N
   opposine N = P
+  |]
 
+singletons [d|
   signZ
     :: Zahlen
     -> Zahlen
@@ -54,20 +58,26 @@ singletons [d|
   signZ (Neg (S n)) = Neg (S Z)
   signZ (Pos Z)     = Pos Z
   signZ (Neg Z)     = Pos Z
+  |]
 
+singletons [d|
   signOf
     :: Zahlen
     -> Sign
   signOf (Pos _) = P
   singOf (Neg _) = N
+  |]
 
+singletons [d|
   signMult
     :: Sign
     -> Sign
     -> Sign
   signMult P s2 = s2
   signMult N s2 = opposite N
+  |]
 
+singletons [d|
   signToZ
     :: Sign
     -> Nat
@@ -77,19 +87,22 @@ singletons [d|
   |]
 
 singletons [d|
-
   absolute'
     :: Zahlen
     -> Nat
   absolute' (Pos n) = n
   absolute' (Neg n) = n
+  |]
 
+singletons [d|
   absolute
     :: Zahlen
     -> Zahlen
   absolute (Pos n) = Pos n
   absolute (Neg n) = Pos n
+  |]
 
+singletons [d|
   inverse
     :: Zahlen
     -> Zahlen
