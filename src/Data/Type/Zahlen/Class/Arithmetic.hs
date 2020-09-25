@@ -111,3 +111,44 @@ plusAssoc (SPos SZ) (SPos (SS n)) (SPos SZ) = Refl
 plusAssoc (SPos SZ) (SPos (SS n)) (SPos (SS p)) = Refl
 plusAssoc (SPos (SS n)) (SPos SZ) (SPos SZ) = undefined
 plusAssoc m n p = undefined
+
+class IsCommutativeRing z where
+  type Zero' :: z
+  type One' :: z
+  type Inv (m :: z) :: z
+
+  oneIsNotZero :: One' :~: Zero' -> Void
+  associativity
+    :: forall x y z. Sing x
+    -> Sing y
+    -> Sing z
+    -> (x + y) + z :~: x + (y + z)
+  commutativity
+    :: forall x y. Sing x
+    -> Sing y
+    -> x + y :~: y + z
+  distr
+    :: forall x y z. Sing x
+    -> Sing y
+    -> Sing z
+    -> (x * (y + z)) :~: ((x * y) + (x * z))
+  zeroNeutral
+    :: forall x. Sing x
+    -> x + Zero' :~: x
+  oneNeutral
+    :: forall x. Sing x
+    -> x * One' :~: x
+  inverseAxiom
+    :: forall x. Sing x
+    -> (x + Inv x) :~: Zero'
+
+class IsCommutativeRing z => IsInteger z where
+  type Signum (m :: z) :: Sign
+  type Absolute'' (m :: z) :: Nat
+
+  zeroEquality :: (Absolute'' x ~ Absolute'' y, Absolute'' x ~ 'Z) => x :~: y
+  zeroEquality = unsafeCoerce Refl
+  zeroEquality' :: Absolute'' x :~: Absolute'' y -> Absolute'' x :~: 'Z -> x :~: y
+  zeroEquality' Refl Refl = unsafeCoerce Refl
+--  zeroIdentity :: forall x m. Absolute'' x :~: 'Z -> x + m :~: m
+--  zeroIdentity = Refl

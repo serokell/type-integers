@@ -163,59 +163,6 @@ singletons [d|
         False -> Neg $ fromInteger n
   |]
 
-class IsCommutativeRing z where
-  type Zero' :: z
-  type One' :: z
-  type Inv (m :: z) :: z
-
-  oneIsNotZero :: One' :~: Zero' -> Void
-  associativity
-    :: forall x y z. Sing x
-    -> Sing y
-    -> Sing z
-    -> (x + y) + z :~: x + (y + z)
-  commutativity
-    :: forall x y. Sing x
-    -> Sing y
-    -> x + y :~: y + z
-  distr
-    :: forall x y z. Sing x
-    -> Sing y
-    -> Sing z
-    -> (x * (y + z)) :~: ((x * y) + (x * z))
-  zeroNeutral
-    :: forall x. Sing x
-    -> x + Zero' :~: x
-  oneNeutral
-    :: forall x. Sing x
-    -> x * One' :~: x
-  inverseAxiom
-    :: forall x. Sing x
-    -> (x + Inv x) :~: Zero'
-
-instance IsCommutativeRing Zahlen where
-  type Zero' = ('Pos 'Z)
-  type One' = ('Pos (S Z))
-  type Inv m = Inverse m
---   zeroIdentity :: forall x m. Absolute'' x :~: 'Z -> x + m :~: m
---   zeroIdentity Refl = Refl `because` (Proxy )
-
-class IsCommutativeRing z => IsInteger z where
-  type Signum (m :: z) :: Sign
-  type Absolute'' (m :: z) :: Nat
-
-  zeroEquality :: (Absolute'' x ~ Absolute'' y, Absolute'' x ~ 'Z) => x :~: y
-  zeroEquality = unsafeCoerce Refl
-  zeroEquality' :: Absolute'' x :~: Absolute'' y -> Absolute'' x :~: 'Z -> x :~: y
-  zeroEquality' Refl Refl = unsafeCoerce Refl
---  zeroIdentity :: forall x m. Absolute'' x :~: 'Z -> x + m :~: m
---  zeroIdentity = Refl
-
-instance IsInteger Zahlen where
-  type Signum ('Pos m) = P
-  type Signum ('Neg m) = N
-  type Absolute'' (_ m) = m
-
 natToZ :: Sing n -> Sing (Pos n)
 natToZ SZ     = SPos SZ
 natToZ (SS n) = SPos (SS n)
