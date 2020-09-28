@@ -19,15 +19,14 @@
 
 module Data.Type.Zahlen.Definitions where
 
+import Data.Kind (Constraint, Type)
+import Unsafe.Coerce
+
 import Data.Singletons.Prelude
 import Data.Singletons.Prelude.Enum
 import Data.Singletons.TH
 import Data.Type.Natural
 import Data.Typeable
-
-import Unsafe.Coerce
-
-import Data.Kind (Constraint, Type)
 
 {-| We represent integers with two constructors @Pos :: Nat -> Zahlen@ and
     @Neg :: Nat -> Zahlen@, such that @Pos n@ represents the integer /n/ and
@@ -128,6 +127,17 @@ singletons [d|
   inverse (Neg n) = Pos n
   |]
 
+{-| Subtract two @Nat@s to get a @Zahlen@. |-}
+singletons [d|
+  sub
+    :: Nat
+    -> Nat
+    -> Zahlen
+  sub m Z         = Pos m
+  sub Z (S n)     = Neg (S n)
+  sub (S m) (S n) = m `sub` n
+  |]
+
 singletons [d|
   instance Ord Zahlen where
     Pos n <= Pos m = n <= m
@@ -142,20 +152,9 @@ singletons [d|
     fromEnum (Neg n) = -1 * fromEnum n
 
     toEnum n =
-      case (n >= 0) of
-        True  ->  Pos $ toEnum n
-        False -> Neg $ toEnum n
-  |]
-
-{-| Subtract two @Nat@s to get a @Zahlen@. |-}
-singletons [d|
-  sub
-    :: Nat
-    -> Nat
-    -> Zahlen
-  sub m Z         = Pos m
-  sub Z (S n)     = Neg (S n)
-  sub (S m) (S n) = m `sub` n
+      if n >= 0
+        then Pos $ toEnum n
+        else Neg $ toEnum n
   |]
 
 singletons [d|
@@ -166,7 +165,7 @@ singletons [d|
     Neg (S m) + Pos n = n `sub` S m
 
     n * m = case (signOf n, signOf m) of
-      (s1, s2) -> (signToZ $ s1 `signMult` s2) $ prodNat
+      (s1, s2) -> signToZ (s1 `signMult` s2) prodNat
       where
         prodNat = absolute' n * absolute' m
 
@@ -177,9 +176,9 @@ singletons [d|
     negate = inverse
 
     fromInteger n =
-      case (n >= 0) of
-        True  -> Pos $ fromInteger n
-        False -> Neg $ fromInteger n
+      if n >= 0
+        then Pos $ fromInteger n
+        else Neg $ fromInteger n
   |]
 
 zToNat :: Sing (Pos n) -> Sing n

@@ -1,38 +1,28 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE EmptyCase            #-}
-{-# LANGUAGE GADTs                #-}
-{-# LANGUAGE InstanceSigs         #-}
-{-# LANGUAGE KindSignatures       #-}
-{-# LANGUAGE NoStarIsType         #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE StandaloneDeriving   #-}
-{-# LANGUAGE TemplateHaskell      #-}
-{-# LANGUAGE TypeApplications     #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE TypeInType           #-}
-{-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE NoStarIsType        #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeInType          #-}
+{-# LANGUAGE TypeOperators       #-}
 
 module Data.Type.Zahlen.Class.Order where
 
---import Data.Promotion.Prelude.Enum
+import Data.Kind (Type)
+import Data.Type.Equality ((:~:) (..))
+import Data.Typeable
+import Unsafe.Coerce
+
 import Data.Singletons.Prelude
 import Data.Singletons.Prelude.Enum
 import Data.Singletons.TH
-import Data.Typeable
-
-import Data.Type.Equality           ((:~:) (..))
 import Data.Type.Natural
 import Data.Type.Natural.Class.Arithmetic
-import Data.Type.Natural.Class.Order (leqTrans, leqAntisymm, leqRefl)
-import Data.Kind                    (Type)
-
+import Data.Type.Natural.Class.Order (leqAntisymm, leqRefl, leqTrans)
 import Proof.Propositional
 
-import Unsafe.Coerce
-
+import Data.Type.Zahlen.Class.Arithmetic (negLemma, posLemma)
 import Data.Type.Zahlen.Definitions
-import Data.Type.Zahlen.Class.Arithmetic (posLemma, negLemma)
 
 -- Order
 
@@ -165,7 +155,7 @@ totality sing1 sing2 =
   case (sing1, sing2) of
     (SNeg n1, SNeg n2) ->
       case n1 %<= n2 of
-        STrue -> Right $ NegLeqNeg $ unsafeCoerce Witness
+        STrue  -> Right $ NegLeqNeg $ unsafeCoerce Witness
         SFalse -> Left $ NegLeqNeg $ unsafeCoerce Witness
     (SNeg n1, SPos n2) ->
       Left NegLeqPos
@@ -173,5 +163,5 @@ totality sing1 sing2 =
       Right NegLeqPos
     (SPos n1, SPos n2) ->
       case n1 %<= n2 of
-        STrue -> Left $ PosLeqPos $ unsafeCoerce Witness
+        STrue  -> Left $ PosLeqPos $ unsafeCoerce Witness
         SFalse -> Right $ PosLeqPos $ unsafeCoerce Witness
