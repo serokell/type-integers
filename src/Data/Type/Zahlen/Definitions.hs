@@ -29,6 +29,11 @@ import Unsafe.Coerce
 
 import Data.Kind (Constraint, Type)
 
+{-| We represent integers with two constructors @Pos :: Nat -> Zahlen@ and
+    @Neg :: Nat -> Zahlen@, such that @Pos n@ represents the integer /n/ and
+    @Neg n@ represents the integer /-n/. Note that zero has two representations
+    under this scheme.
+-}
 singletons [d|
   data Zahlen = Pos Nat | Neg Nat
     deriving (Show, Eq)
@@ -37,11 +42,13 @@ singletons [d|
 deriving instance Typeable 'Neg
 deriving instance Typeable 'Pos
 
+{-| The sign of a 'Zahlen'. -}
 singletons [d|
   data Sign = P | N
     deriving (Show, Eq)
   |]
 
+{-| Flip a sign. -}
 singletons [d|
   opposite
     :: Sign
@@ -50,6 +57,9 @@ singletons [d|
   opposite N = P
   |]
 
+{-| Get the sign of a 'Zahlen' as a 'Zahlen'. Note that the sign of either zero
+    representation is @Pos Z@.
+-}
 singletons [d|
   signZ
     :: Zahlen
@@ -60,6 +70,9 @@ singletons [d|
   signZ (Neg Z)     = Pos Z
   |]
 
+{-| Get the sign of a 'Zahlen' as a 'Sign'. Note that the sign of @Pos Z@ is @P@
+    and the sign of @Neg z@ is @N@.
+-}
 singletons [d|
   signOf
     :: Zahlen
@@ -68,6 +81,7 @@ singletons [d|
   signOf (Neg _) = N
   |]
 
+{-| Get the sign of a product from the signs of the factors. -}
 singletons [d|
   signMult
     :: Sign
@@ -77,6 +91,7 @@ singletons [d|
   signMult N s2 = opposite N
   |]
 
+{-| Construct a @Zahlen@ from a @Sign@ and @Nat@. |-}
 singletons [d|
   signToZ
     :: Sign
@@ -86,6 +101,7 @@ singletons [d|
   signToZ N = Neg
   |]
 
+{-| Get the absolute value of a @Zahlen@ as a @Nat@. |-}
 singletons [d|
   absolute'
     :: Zahlen
@@ -94,6 +110,7 @@ singletons [d|
   absolute' (Neg n) = n
   |]
 
+{-| Get the absolute value of a @Zahlen@ as a @Zahlen@. |-}
 singletons [d|
   absolute
     :: Zahlen
@@ -102,6 +119,7 @@ singletons [d|
   absolute (Neg n) = Pos n
   |]
 
+{-| Negate a @Zahlen@. |-}
 singletons [d|
   inverse
     :: Zahlen
@@ -129,6 +147,7 @@ singletons [d|
         False -> Neg $ toEnum n
   |]
 
+{-| Subtract two @Nat@s to get a @Zahlen@. |-}
 singletons [d|
   sub
     :: Nat
