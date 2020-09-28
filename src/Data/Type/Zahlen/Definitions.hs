@@ -182,10 +182,6 @@ singletons [d|
         False -> Neg $ fromInteger n
   |]
 
-natToZ :: Sing n -> Sing (Pos n)
-natToZ SZ     = SPos SZ
-natToZ (SS n) = SPos (SS n)
-
 zToNat :: Sing (Pos n) -> Sing n
 zToNat (SPos n) = n
 
