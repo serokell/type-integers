@@ -47,7 +47,7 @@ singletons [d|
     :: Sign
     -> Sign
   opposite P = N
-  opposine N = P
+  opposite N = P
   |]
 
 singletons [d|
@@ -65,7 +65,7 @@ singletons [d|
     :: Zahlen
     -> Sign
   signOf (Pos _) = P
-  singOf (Neg _) = N
+  signOf (Neg _) = N
   |]
 
 singletons [d|
