@@ -19,16 +19,20 @@
 
 module Data.Type.Zahlen.Definitions where
 
+import Data.Kind (Constraint, Type)
+import Unsafe.Coerce
+
 import Data.Singletons.Prelude
 import Data.Singletons.Prelude.Enum
 import Data.Singletons.TH
 import Data.Type.Natural
 import Data.Typeable
 
-import Unsafe.Coerce
-
-import Data.Kind (Constraint, Type)
-
+{-| We represent integers with two constructors @Pos :: Nat -> Zahlen@ and
+    @Neg :: Nat -> Zahlen@, such that @Pos n@ represents the integer /n/ and
+    @Neg n@ represents the integer /-n/. Note that zero has two representations
+    under this scheme.
+-}
 singletons [d|
   data Zahlen = Pos Nat | Neg Nat
     deriving (Show, Eq)
@@ -37,16 +41,25 @@ singletons [d|
 deriving instance Typeable 'Neg
 deriving instance Typeable 'Pos
 
+{-| The sign of a 'Zahlen'. -}
 singletons [d|
   data Sign = P | N
     deriving (Show, Eq)
+  |]
 
+{-| Flip a sign. -}
+singletons [d|
   opposite
     :: Sign
     -> Sign
   opposite P = N
-  opposine N = P
+  opposite N = P
+  |]
 
+{-| Get the sign of a 'Zahlen' as a 'Zahlen'. Note that the sign of either zero
+    representation is @Pos Z@.
+-}
+singletons [d|
   signZ
     :: Zahlen
     -> Zahlen
@@ -54,20 +67,31 @@ singletons [d|
   signZ (Neg (S n)) = Neg (S Z)
   signZ (Pos Z)     = Pos Z
   signZ (Neg Z)     = Pos Z
+  |]
 
+{-| Get the sign of a 'Zahlen' as a 'Sign'. Note that the sign of @Pos Z@ is @P@
+    and the sign of @Neg z@ is @N@.
+-}
+singletons [d|
   signOf
     :: Zahlen
     -> Sign
   signOf (Pos _) = P
-  singOf (Neg _) = N
+  signOf (Neg _) = N
+  |]
 
+{-| Get the sign of a product from the signs of the factors. -}
+singletons [d|
   signMult
     :: Sign
     -> Sign
     -> Sign
   signMult P s2 = s2
   signMult N s2 = opposite N
+  |]
 
+{-| Construct a @Zahlen@ from a @Sign@ and @Nat@. |-}
+singletons [d|
   signToZ
     :: Sign
     -> Nat
@@ -76,25 +100,42 @@ singletons [d|
   signToZ N = Neg
   |]
 
+{-| Get the absolute value of a @Zahlen@ as a @Nat@. |-}
 singletons [d|
-
   absolute'
     :: Zahlen
     -> Nat
   absolute' (Pos n) = n
   absolute' (Neg n) = n
+  |]
 
+{-| Get the absolute value of a @Zahlen@ as a @Zahlen@. |-}
+singletons [d|
   absolute
     :: Zahlen
     -> Zahlen
   absolute (Pos n) = Pos n
   absolute (Neg n) = Pos n
+  |]
 
+{-| Negate a @Zahlen@. |-}
+singletons [d|
   inverse
     :: Zahlen
     -> Zahlen
   inverse (Pos n) = Neg n
   inverse (Neg n) = Pos n
+  |]
+
+{-| Subtract two @Nat@s to get a @Zahlen@. |-}
+singletons [d|
+  sub
+    :: Nat
+    -> Nat
+    -> Zahlen
+  sub m Z         = Pos m
+  sub Z (S n)     = Neg (S n)
+  sub (S m) (S n) = m `sub` n
   |]
 
 singletons [d|
@@ -111,19 +152,9 @@ singletons [d|
     fromEnum (Neg n) = -1 * fromEnum n
 
     toEnum n =
-      case (n >= 0) of
-        True  ->  Pos $ toEnum n
-        False -> Neg $ toEnum n
-  |]
-
-singletons [d|
-  sub
-    :: Nat
-    -> Nat
-    -> Zahlen
-  sub m Z         = Pos m
-  sub Z (S n)     = Neg (S n)
-  sub (S m) (S n) = m `sub` n
+      if n >= 0
+        then Pos $ toEnum n
+        else Neg $ toEnum n
   |]
 
 singletons [d|
@@ -134,7 +165,7 @@ singletons [d|
     Neg (S m) + Pos n = n `sub` S m
 
     n * m = case (signOf n, signOf m) of
-      (s1, s2) -> (signToZ $ s1 `signMult` s2) $ prodNat
+      (s1, s2) -> signToZ (s1 `signMult` s2) prodNat
       where
         prodNat = absolute' n * absolute' m
 
@@ -145,67 +176,10 @@ singletons [d|
     negate = inverse
 
     fromInteger n =
-      case (n >= 0) of
-        True  -> Pos $ fromInteger n
-        False -> Neg $ fromInteger n
+      if n >= 0
+        then Pos $ fromInteger n
+        else Neg $ fromInteger n
   |]
-
-class IsCommutativeRing z where
-  type Zero' :: z
-  type One' :: z
-  type Inv (m :: z) :: z
-
-  oneIsNotZero :: One' :~: Zero' -> Void
-  associativity
-    :: forall x y z. Sing x
-    -> Sing y
-    -> Sing z
-    -> (x + y) + z :~: x + (y + z)
-  commutativity
-    :: forall x y. Sing x
-    -> Sing y
-    -> x + y :~: y + z
-  distr
-    :: forall x y z. Sing x
-    -> Sing y
-    -> Sing z
-    -> (x * (y + z)) :~: ((x * y) + (x * z))
-  zeroNeutral
-    :: forall x. Sing x
-    -> x + Zero' :~: x
-  oneNeutral
-    :: forall x. Sing x
-    -> x * One' :~: x
-  inverseAxiom
-    :: forall x. Sing x
-    -> (x + Inv x) :~: Zero'
-
-instance IsCommutativeRing Zahlen where
-  type Zero' = ('Pos 'Z)
-  type One' = ('Pos (S Z))
-  type Inv m = Inverse m
---   zeroIdentity :: forall x m. Absolute'' x :~: 'Z -> x + m :~: m
---   zeroIdentity Refl = Refl `because` (Proxy )
-
-class IsCommutativeRing z => IsInteger z where
-  type Signum (m :: z) :: Sign
-  type Absolute'' (m :: z) :: Nat
-
-  zeroEquality :: (Absolute'' x ~ Absolute'' y, Absolute'' x ~ 'Z) => x :~: y
-  zeroEquality = unsafeCoerce Refl
-  zeroEquality' :: Absolute'' x :~: Absolute'' y -> Absolute'' x :~: 'Z -> x :~: y
-  zeroEquality' Refl Refl = unsafeCoerce Refl
---  zeroIdentity :: forall x m. Absolute'' x :~: 'Z -> x + m :~: m
---  zeroIdentity = Refl
-
-instance IsInteger Zahlen where
-  type Signum ('Pos m) = P
-  type Signum ('Neg m) = N
-  type Absolute'' (_ m) = m
-
-natToZ :: Sing n -> Sing (Pos n)
-natToZ SZ     = SPos SZ
-natToZ (SS n) = SPos (SS n)
 
 zToNat :: Sing (Pos n) -> Sing n
 zToNat (SPos n) = n
