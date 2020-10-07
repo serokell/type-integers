@@ -118,15 +118,6 @@ singletons [d|
   absolute (Neg n) = Pos n
   |]
 
-{-| Negate a @Zahlen@. |-}
-singletons [d|
-  inverse
-    :: Zahlen
-    -> Zahlen
-  inverse (Pos n) = Neg n
-  inverse (Neg n) = Pos n
-  |]
-
 {-| Subtract two @Nat@s to get a @Zahlen@. |-}
 singletons [d|
   sub
@@ -173,7 +164,8 @@ singletons [d|
 
     signum = signZ
 
-    negate = inverse
+    negate (Pos n) = Neg n
+    negate (Neg n) = Pos n
 
     fromInteger n =
       if n >= 0

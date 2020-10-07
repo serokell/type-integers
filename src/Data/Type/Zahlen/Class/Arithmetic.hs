@@ -63,11 +63,11 @@ multCong
   -> (n * p) :~: (m * p)
 multCong Refl = Refl
 
-negInv
-  :: forall n. Sing n
-  -> Inverse (Inverse n) :~: n
-negInv (SPos n) = Refl
-negInv (SNeg n) = Refl
+negNeg
+  :: forall n. Sing (n :: Zahlen)
+  -> Negate (Negate n) :~: n
+negNeg (SPos n) = Refl
+negNeg (SNeg n) = Refl
 
 absoluteIdem
   :: forall n. Sing n
