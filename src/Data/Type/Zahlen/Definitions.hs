@@ -105,22 +105,24 @@ singletons [d|
 --  |]
 
 {-| Get the absolute value of a @Zahlen@ as a @Nat@. |-}
-singletons [d|
-  absolute'
-    :: Zahlen
-    -> Nat
-  absolute' (Pos n) = n
-  absolute' (Neg n) = n
-  |]
+-- TODO: Decide what to do with absolute'
+--singletons [d|
+--  absolute'
+--    :: Zahlen
+--    -> Nat
+--  absolute' (Pos n) = n
+--  absolute' (Neg n) = n
+--  |]
 
 {-| Get the absolute value of a @Zahlen@ as a @Zahlen@. |-}
-singletons [d|
-  absolute
-    :: Zahlen
-    -> Zahlen
-  absolute (Pos n) = Pos n
-  absolute (Neg n) = Pos n
-  |]
+-- TODO: Decide what to do with absolute
+--singletons [d|
+--  absolute
+--    :: Zahlen
+--    -> Zahlen
+--  absolute (Pos n) = Pos n
+--  absolute (Neg n) = Pos n
+--  |]
 
 {-| Subtract two @Nat@s to get a @Zahlen@. |-}
 singletons [d|
@@ -165,7 +167,8 @@ singletons [d|
 --      where
 --        prodNat = absolute' n * absolute' m
 
-    abs = absolute
+    abs (Pos n) = Pos n
+    abs (Neg n) = Pos n
 
     signum = signZ
 
