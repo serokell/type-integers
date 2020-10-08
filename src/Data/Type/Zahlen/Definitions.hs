@@ -61,15 +61,16 @@ deriving instance Typeable 'Pos
 {-| Get the sign of a 'Zahlen' as a 'Zahlen'. Note that the sign of either zero
     representation is @Pos Z@.
 -}
-singletons [d|
-  signZ
-    :: Zahlen
-    -> Zahlen
-  signZ (Pos (S n)) = Pos (S Z)
-  signZ (Neg (S n)) = Neg (S Z)
-  signZ (Pos Z)     = Pos Z
-  signZ (Neg Z)     = Pos Z
-  |]
+-- TODO: Decide what to do with signZ
+--singletons [d|
+--  signZ
+--    :: Zahlen
+--    -> Zahlen
+--  signZ (Pos (S n)) = Pos (S Z)
+--  signZ (Neg (S n)) = Neg (S Z)
+--  signZ (Pos Z)     = Pos Z
+--  signZ (Neg Z)     = Pos Z
+--  |]
 
 {-| Get the sign of a 'Zahlen' as a 'Sign'. Note that the sign of @Pos Z@ is @P@
     and the sign of @Neg z@ is @N@.
@@ -170,7 +171,10 @@ singletons [d|
     abs (Pos n) = Pos n
     abs (Neg n) = Pos n
 
-    signum = signZ
+    signum (Pos (S n)) = Pos (S Z)
+    signum (Neg (S n)) = Neg (S Z)
+    signum (Pos Z)     = Pos Z
+    signum (Neg Z)     = Pos Z
 
     negate (Pos n) = Neg n
     negate (Neg n) = Pos n
