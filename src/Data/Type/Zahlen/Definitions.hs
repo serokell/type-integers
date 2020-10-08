@@ -42,19 +42,21 @@ deriving instance Typeable 'Neg
 deriving instance Typeable 'Pos
 
 {-| The sign of a 'Zahlen'. -}
-singletons [d|
-  data Sign = P | N
-    deriving (Show, Eq)
-  |]
+-- TODO: Decide what to do with sign
+--singletons [d|
+--  data Sign = P | N
+--    deriving (Show, Eq)
+--  |]
 
 {-| Flip a sign. -}
-singletons [d|
-  opposite
-    :: Sign
-    -> Sign
-  opposite P = N
-  opposite N = P
-  |]
+-- TODO: Decide what to do with sign
+--singletons [d|
+--  opposite
+--    :: Sign
+--    -> Sign
+--  opposite P = N
+--  opposite N = P
+--  |]
 
 {-| Get the sign of a 'Zahlen' as a 'Zahlen'. Note that the sign of either zero
     representation is @Pos Z@.
@@ -72,33 +74,35 @@ singletons [d|
 {-| Get the sign of a 'Zahlen' as a 'Sign'. Note that the sign of @Pos Z@ is @P@
     and the sign of @Neg z@ is @N@.
 -}
-singletons [d|
-  signOf
-    :: Zahlen
-    -> Sign
-  signOf (Pos _) = P
-  signOf (Neg _) = N
-  |]
+-- TODO: Decide what to do with sign
+--singletons [d|
+--  signOf
+--    :: Zahlen
+--    -> Sign
+--  signOf (Pos _) = P
+--  signOf (Neg _) = N
+--  |]
 
 {-| Get the sign of a product from the signs of the factors. -}
-singletons [d|
-  signMult
-    :: Sign
-    -> Sign
-    -> Sign
-  signMult P s2 = s2
-  signMult N s2 = opposite N
-  |]
+-- TODO: Decide what to do with sign
+--singletons [d|
+--  signMult
+--    :: Sign
+--    -> Sign
+--    -> Sign
+--  signMult P s2 = s2
+--  signMult N s2 = opposite N
+--  |]
 
 {-| Construct a @Zahlen@ from a @Sign@ and @Nat@. |-}
-singletons [d|
-  signToZ
-    :: Sign
-    -> Nat
-    -> Zahlen
-  signToZ P = Pos
-  signToZ N = Neg
-  |]
+--singletons [d|
+--  signToZ
+--    :: Sign
+--    -> Nat
+--    -> Zahlen
+--  signToZ P = Pos
+--  signToZ N = Neg
+--  |]
 
 {-| Get the absolute value of a @Zahlen@ as a @Nat@. |-}
 singletons [d|
@@ -155,10 +159,11 @@ singletons [d|
     Pos m + Neg (S n) = m `sub` S n
     Neg (S m) + Pos n = n `sub` S m
 
-    n * m = case (signOf n, signOf m) of
-      (s1, s2) -> signToZ (s1 `signMult` s2) prodNat
-      where
-        prodNat = absolute' n * absolute' m
+-- TODO: Reimplement
+--    n * m = case (signOf n, signOf m) of
+--      (s1, s2) -> signToZ (s1 `signMult` s2) prodNat
+--      where
+--        prodNat = absolute' n * absolute' m
 
     abs = absolute
 
