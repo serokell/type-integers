@@ -1,3 +1,4 @@
 *.lock 
 .stack-work
 type-integers.cabal
+app

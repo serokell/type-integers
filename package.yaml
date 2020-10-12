@@ -27,3 +27,11 @@ library:
     - equational-reasoning
     - singletons
     - type-natural
+
+executables:
+  myproject:
+    main:                Main.hs
+    source-dirs:         app
+    dependencies:
+      - type-integers
+      - type-natural
