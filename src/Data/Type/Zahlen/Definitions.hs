@@ -34,12 +34,12 @@ import Data.Typeable
     under this scheme.
 -}
 singletons [d|
-  data Zahlen = Pos Nat | Neg Nat
+  data Zahlen = Pos Nat | Neg1 Nat
     deriving (Show, Eq)
   |]
 
-deriving instance Typeable 'Neg
 deriving instance Typeable 'Pos
+deriving instance Typeable 'Neg1
 
 {-| The sign of a 'Zahlen'. -}
 -- TODO: Decide what to do with sign
@@ -126,67 +126,81 @@ deriving instance Typeable 'Pos
 --  |]
 
 {-| Subtract two @Nat@s to get a @Zahlen@. |-}
-singletons [d|
-  sub
-    :: Nat
-    -> Nat
-    -> Zahlen
-  sub m Z         = Pos m
-  sub Z (S n)     = Neg (S n)
-  sub (S m) (S n) = m `sub` n
-  |]
+-- TODO: Decide if this is necessary
+--singletons [d|
+--  sub
+--    :: Nat
+--    -> Nat
+--    -> Zahlen
+--  sub m Z         = Pos m
+--  sub Z (S n)     = Neg (S n)
+--  sub (S m) (S n) = m `sub` n
+--  |]
 
-singletons [d|
-  instance Ord Zahlen where
-    Pos n <= Pos m = n <= m
-    Neg _ <= Pos _ = True
-    Neg n <= Neg m = m <= n
-    Pos _ <= Neg _ = False
-  |]
+-- TODO: Reimplement
+--singletons [d|
+--  instance Ord Zahlen where
+--    Pos n <= Pos m = n <= m
+--    Neg _ <= Pos _ = True
+--    Neg n <= Neg m = m <= n
+--    Pos _ <= Neg _ = False
+--  |]
 
-singletons [d|
-  instance Enum Zahlen where
-    fromEnum (Pos n) = fromEnum n
-    fromEnum (Neg n) = -1 * fromEnum n
-
-    toEnum n =
-      if n >= 0
-        then Pos $ toEnum n
-        else Neg $ toEnum n
-  |]
+-- TODO: Reimplement
+--singletons [d|
+--  instance Enum Zahlen where
+--    fromEnum (Pos n) = fromEnum n
+--    fromEnum (Neg n) = -1 * fromEnum n
+--
+--    toEnum n =
+--      if n >= 0
+--        then Pos $ toEnum n
+--        else Neg $ toEnum n
+--  |]
 
 singletons [d|
   instance Num Zahlen where
-    Neg m + Neg n = Neg (m + n)
+    Neg1 m + Neg1 n = Neg1 (m + n + 1)
     Pos m + Pos n = Pos (m + n)
-    Pos m + Neg (S n) = m `sub` S n
-    Neg (S m) + Pos n = n `sub` S m
+    Neg1 m + Pos n = Pos n + Neg1 m
+    Pos Z + Neg1 n = Neg1 n
+    Pos (S m) + Neg1 Z = Pos m
+    Pos (S m) + Neg1 (S n) = Pos m + Neg1 n
 
--- TODO: Reimplement
---    n * m = case (signOf n, signOf m) of
---      (s1, s2) -> signToZ (s1 `signMult` s2) prodNat
---      where
---        prodNat = absolute' n * absolute' m
+    a * b =
+      case (a, b) of
+        (Pos n,  Pos m)  -> Pos (n * m)
+        (Pos n,  Neg1 m) ->
+          case n of
+            Z    -> Pos Z
+            S n' -> Neg1 (n * m + n')
+        (Neg1 n, Pos m)  -> Pos m * Neg1 n
+        (Neg1 n, Neg1 m) -> Pos ((n + 1) * (m + 1))
 
     abs (Pos n) = Pos n
-    abs (Neg n) = Pos n
+    abs (Neg1 n) = Pos (S n)
 
+    signum (Pos Z) = Pos Z
     signum (Pos (S n)) = Pos (S Z)
-    signum (Neg (S n)) = Neg (S Z)
-    signum (Pos Z)     = Pos Z
-    signum (Neg Z)     = Pos Z
+    signum (Neg1 n) = Neg1 Z
 
-    negate (Pos n) = Neg n
-    negate (Neg n) = Pos n
+    negate (Pos Z) = Pos Z
+    negate (Pos (S n)) = Neg1 n
+    negate (Neg1 n) = Pos (S n)
 
     fromInteger n =
       if n >= 0
         then Pos $ fromInteger n
-        else Neg $ fromInteger n
+        else Neg1 $ fromInteger (- n - 1)
   |]
 
-zToNat :: Sing (Pos n) -> Sing n
-zToNat (SPos n) = n
+-- TODO: Decide if necessary
+--zToNat :: Sing (Pos n) -> Sing n
+--zToNat (SPos n) = n
+--
+--zToNatNeg :: Sing (Neg n) -> Sing n
+--zToNatNeg (SNeg n) = n
 
-zToNatNeg :: Sing (Neg n) -> Sing n
-zToNatNeg (SNeg n) = n
+zahlenToInt :: Integral a => Zahlen -> a
+zahlenToInt (Pos n) = natToInt n
+zahlenToInt (Neg1 n) = - natToInt n - 1
