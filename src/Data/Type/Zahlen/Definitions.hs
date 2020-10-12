@@ -145,17 +145,16 @@ singletons [d|
     Pos _ <= Neg1 _ = False
   |]
 
--- TODO: Reimplement
---singletons [d|
---  instance Enum Zahlen where
---    fromEnum (Pos n) = fromEnum n
---    fromEnum (Neg n) = -1 * fromEnum n
---
---    toEnum n =
---      if n >= 0
---        then Pos $ toEnum n
---        else Neg $ toEnum n
---  |]
+singletons [d|
+  instance Enum Zahlen where
+    fromEnum (Pos n) = fromEnum n
+    fromEnum (Neg1 n) = - fromEnum n - 1
+
+    toEnum n =
+      if n >= 0
+        then Pos $ toEnum n
+        else Neg1 $ toEnum (-n - 1)
+  |]
 
 singletons [d|
   instance Num Zahlen where
