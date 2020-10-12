@@ -137,14 +137,13 @@ deriving instance Typeable 'Neg1
 --  sub (S m) (S n) = m `sub` n
 --  |]
 
--- TODO: Reimplement
---singletons [d|
---  instance Ord Zahlen where
---    Pos n <= Pos m = n <= m
---    Neg _ <= Pos _ = True
---    Neg n <= Neg m = m <= n
---    Pos _ <= Neg _ = False
---  |]
+singletons [d|
+  instance Ord Zahlen where
+    Pos n <= Pos m = n <= m
+    Neg1 _ <= Pos _ = True
+    Neg1 n <= Neg1 m = m <= n
+    Pos _ <= Neg1 _ = False
+  |]
 
 -- TODO: Reimplement
 --singletons [d|
