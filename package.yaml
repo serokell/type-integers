@@ -22,17 +22,22 @@ dependencies:
 - base >= 4.7 && < 5
 
 ghc-options:
-  -Weverything
-  -Wno-missing-exported-signatures
-  -Wno-missing-import-lists
-  -Wno-missed-specialisations
-  -Wno-all-missed-specialisations
-  -Wno-unsafe
-  -Wno-safe
-  -Wno-missing-local-signatures
-  -Wno-monomorphism-restriction
-  -Wno-implicit-prelude
-  -Werror=incomplete-patterns
+  - -Weverything
+  - -Wno-missing-exported-signatures
+  - -Wno-missing-import-lists
+  - -Wno-missed-specialisations
+  - -Wno-all-missed-specialisations
+  - -Wno-missing-local-signatures
+  - -Wno-monomorphism-restriction
+  - -Wno-implicit-prelude
+  - -Werror=incomplete-patterns
+  # TODO: Remove these if able
+  - -Wno-missing-safe-haskell-mode
+  - -Wno-missing-export-lists
+  - -Wno-missing-deriving-strategies
+  - -Wno-unused-matches
+  - -Wno-unused-type-patterns
+  - -Wno-unsafe
 
 library:
   source-dirs: src
