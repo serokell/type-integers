@@ -19,11 +19,7 @@
 
 module Data.Type.Zahlen.Definitions where
 
-import Data.Kind (Constraint, Type)
-import Unsafe.Coerce
-
 import Data.Singletons.Prelude
-import Data.Singletons.Prelude.Enum
 import Data.Singletons.TH
 import Data.Type.Natural
 
