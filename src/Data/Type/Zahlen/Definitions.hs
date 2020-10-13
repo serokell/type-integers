@@ -26,7 +26,6 @@ import Data.Singletons.Prelude
 import Data.Singletons.Prelude.Enum
 import Data.Singletons.TH
 import Data.Type.Natural
-import Data.Typeable
 
 {-| We represent integers with two constructors @Pos :: Nat -> Zahlen@ and
     @Neg :: Nat -> Zahlen@, such that @Pos n@ represents the integer /n/ and
@@ -37,9 +36,6 @@ singletons [d|
   data Zahlen = Pos Nat | Neg1 Nat
     deriving (Show, Eq)
   |]
-
-deriving instance Typeable 'Pos
-deriving instance Typeable 'Neg1
 
 {-| The sign of a 'Zahlen'. -}
 -- TODO: Decide what to do with sign
