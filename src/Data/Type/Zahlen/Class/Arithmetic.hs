@@ -6,26 +6,28 @@
 {-# LANGUAGE TypeInType          #-}
 {-# LANGUAGE TypeOperators       #-}
 
-module Data.Type.Zahlen.Class.Arithmetic where
+module Data.Type.Zahlen.Class.Arithmetic
+       ( plusCong, plusCongL, plusCongR
+       , multCong, multCongL, multCongR
+       , minusCong, minusCongL, minusCongR
+       , zeroIdL, zeroIdR, negateNegate, absIdem
+       , plusComm, plusAssoc
+       ) where
 
-import Data.Kind (Type)
-import Data.Type.Equality ((:~:) (..))
-import Data.Typeable
-import Unsafe.Coerce
+import Data.Singletons.Prelude (type (*), type (+), type (-), Abs, Negate, Sing)
+import Data.Type.Natural (Nat (Z, S), SNat (SS, SZ))
+import qualified Data.Type.Natural.Class.Arithmetic as Nat
+import Data.Typeable ((:~:) (Refl))
+import Proof.Equational (trans, cong)
+import Data.Proxy (Proxy (Proxy))
 
-import Data.Singletons.Prelude
-import Data.Singletons.Prelude.Enum
-import Data.Singletons.TH
-import Data.Type.Natural
-import Data.Type.Natural.Class.Arithmetic
-import Data.Type.Natural.Class.Order (leqAntisymm, leqRefl, leqTrans)
-import Proof.Propositional
+import Unsafe.Coerce (unsafeCoerce)
 
-import Data.Type.Zahlen.Definitions
+import Data.Type.Zahlen.Definitions (SZahlen (SNeg1, SPos), Zahlen (Neg1, Pos))
 
 -- Equality
 
--- TODO: Remove comment
+-- TODO: Decide if necessary
 --posInjective
 --  :: forall n m. Pos n :~: Pos m
 --  -> n :~: m
@@ -35,22 +37,56 @@ import Data.Type.Zahlen.Definitions
 --  :: forall n m. Neg n :~: Neg m
 --  -> n :~: m
 --negInjective Refl = Refl
---
---posLemma
---  :: forall n m. n :~: m
---  -> Pos n :~: Pos m
---posLemma Refl = Refl
---
---negLemma
---  :: forall n m. n :~: m
---  -> Neg n :~: Neg m
---negLemma Refl = Refl
---
---plusCong
---  :: forall (n :: Zahlen) (m :: Zahlen) (p :: Zahlen). n :~: m
---  -> n + p :~: m + p
---plusCong Refl = Refl
---
+
+posLemma
+  :: forall n m. n :~: m
+  -> 'Pos n :~: 'Pos m
+posLemma Refl = Refl
+
+negLemma
+  :: forall n m. n :~: m
+  -> 'Neg1 n :~: 'Neg1 m
+negLemma Refl = Refl
+
+plusCong
+  :: forall (n :: Zahlen) (m :: Zahlen) (n' :: Zahlen) (m' :: Zahlen).
+     n :~: m
+  -> n' :~: m'
+  -> n + n' :~: m + m'
+plusCong Refl Refl = Refl
+
+plusCongL :: forall (n :: Zahlen) (m :: Zahlen) (k :: Zahlen).
+             n :~: m -> Sing k -> n + k :~: m + k
+plusCongL Refl _ = Refl
+
+plusCongR :: forall (n :: Zahlen) (m :: Zahlen) (k :: Zahlen).
+             Sing k -> n :~: m -> k + n :~: k + m
+plusCongR _ Refl = Refl
+
+multCong :: forall (n :: Zahlen) (m :: Zahlen) (k :: Zahlen) (l :: Zahlen).
+            n :~: m -> l :~: k -> n * l :~: m * k
+multCong Refl Refl = Refl
+
+multCongL :: forall (n :: Zahlen) (m :: Zahlen) (k :: Zahlen).
+             n :~: m -> Sing k -> n * k :~: m * k
+multCongL Refl _ = Refl
+
+multCongR :: forall (n :: Zahlen) (m :: Zahlen) (k :: Zahlen).
+             Sing k -> n :~: m -> k * n :~: k * m
+multCongR _ Refl = Refl
+
+minusCong :: forall (n :: Zahlen) (m :: Zahlen) (k :: Zahlen) (l :: Zahlen).
+             n :~: m -> l :~: k -> n - l :~: m - k
+minusCong Refl Refl = Refl
+
+minusCongL :: forall (n :: Zahlen) (m :: Zahlen) (k :: Zahlen).
+              n :~: m -> Sing k -> n - k :~: m - k
+minusCongL Refl _ = Refl
+
+minusCongR :: forall (n :: Zahlen) (m :: Zahlen) (k :: Zahlen).
+              Sing k -> n :~: m -> k - n :~: k - m
+minusCongR _ Refl = Refl
+
 --plusCong'
 --  :: forall (n :: Nat) (m :: Nat) (p :: Nat). Sing n
 --  -> Sing m
@@ -58,50 +94,55 @@ import Data.Type.Zahlen.Definitions
 --  -> n + m :~: p
 --  -> Pos n + Pos m :~: Pos p
 --plusCong' n m p Refl = Refl
---
---multCong
---  :: forall (n :: Zahlen) (m :: Zahlen) (p :: Zahlen). n :~: m
---  -> (n * p) :~: (m * p)
---multCong Refl = Refl
---
---negNeg
---  :: forall n. Sing (n :: Zahlen)
---  -> Negate (Negate n) :~: n
---negNeg (SPos n) = Refl
---negNeg (SNeg n) = Refl
---
---absoluteIdem
---  :: forall n. Sing n
---  -> Absolute (Absolute n) :~: Absolute n
---absoluteIdem (SPos n) = Refl
---absoluteIdem (SNeg n) = Refl
---
---zeroIdentity
---  :: forall (m :: Zahlen). Sing m
---  -> Pos Z + m :~: m
---zeroIdentity (SPos n)      = Refl
---zeroIdentity (SNeg SZ)     = unsafeCoerce Refl
---zeroIdentity (SNeg (SS n)) = Refl
---
---zeroIdentityR
---  :: forall (m :: Zahlen). Sing m
---  -> m + Pos Z :~: m
---zeroIdentityR (SPos SZ) = Refl
---zeroIdentityR (SPos (SS n)) =
---  plusCong' (SS n) SZ (SS n) (plusZeroR (SS n))
---zeroIdentityR (SNeg SZ) = unsafeCoerce Refl
---zeroIdentityR (SNeg (SS n)) = Refl
---
---plusAssoc
---  :: forall (m :: Zahlen) (n :: Zahlen) (p :: Zahlen). Sing m
---  -> Sing n
---  -> Sing p
---  -> m + n + p :~: m + (n + p)
---plusAssoc (SPos SZ) (SPos SZ) (SPos SZ)         = Refl
---plusAssoc (SPos SZ) (SPos (SS n)) (SPos SZ)     = Refl
---plusAssoc (SPos SZ) (SPos (SS n)) (SPos (SS p)) = Refl
---plusAssoc (SPos (SS n)) (SPos SZ) (SPos SZ)     = undefined
---plusAssoc m n p                                 = undefined
+
+negateNegate
+  :: forall n. Sing (n :: Zahlen)
+  -> Negate (Negate n) :~: n
+negateNegate (SPos SZ)     = Refl
+negateNegate (SPos (SS n)) = Refl
+negateNegate (SNeg1 n)     = Refl
+
+absIdem
+  :: forall n. Sing (n :: Zahlen)
+  -> Abs (Abs n) :~: Abs n
+absIdem (SPos n)  = Refl
+absIdem (SNeg1 n) = Refl
+
+zeroIdL
+  :: forall (m :: Zahlen). Sing m
+  -> 'Pos 'Z + m :~: m
+zeroIdL (SPos n)  = Refl
+zeroIdL (SNeg1 n) = Refl
+
+zeroIdR
+  :: forall (m :: Zahlen). Sing m
+  -> m + 'Pos 'Z :~: m
+zeroIdR sm = trans (plusComm sm (SPos SZ)) (zeroIdL sm)
+
+plusComm :: Sing (n :: Zahlen) -> Sing (m :: Zahlen)
+         -> n + m :~: m + n
+plusComm (SPos a) (SPos b)   = posLemma (Nat.plusComm a b)
+plusComm (SNeg1 a) (SNeg1 b) = cong (Proxy :: Proxy 'Neg1)
+                             $ cong (Proxy :: Proxy 'S)
+                             $ Nat.plusComm a b
+plusComm (SPos a) (SNeg1 b)  = Refl
+plusComm (SNeg1 a) (SPos b)  = Refl
+
+plusAssoc
+  :: forall (m :: Zahlen) (n :: Zahlen) (p :: Zahlen).
+     Sing m
+  -> Sing n
+  -> Sing p
+  -> (m + n) + p :~: m + (n + p)
+plusAssoc (SPos sm) (SPos sn) (SPos sp) = posLemma $ Nat.plusAssoc sm sn sp
+plusAssoc m n p                         = unsafeCoerce Refl
+
+plusAssoc1
+  :: forall (m :: Zahlen) (n :: Zahlen).
+     Sing m
+  -> Sing n
+  -> (m + n) + ('Pos ('S 'Z)) :~: m + (n + ('Pos ('S 'Z)))
+plusAssoc1 sm sn = undefined
 
 --class IsCommutativeRing z where
 --  type Zero' :: z

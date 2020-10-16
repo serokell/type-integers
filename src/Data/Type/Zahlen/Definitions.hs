@@ -24,12 +24,13 @@ import Data.Singletons.TH
 import Data.Type.Natural
 
 {-| We represent integers with two constructors @Pos :: Nat -> Zahlen@ and
-    @Neg :: Nat -> Zahlen@, such that @Pos n@ represents the integer /n/ and
-    @Neg n@ represents the integer /-n/. Note that zero has two representations
+    @Neg1 :: Nat -> Zahlen@, such that @Pos n@ represents the integer /n/ and
+    @Neg1 n@ represents the integer /-n - 1/. Note that zero has two representations
     under this scheme.
 -}
 singletons [d|
-  data Zahlen = Pos Nat | Neg1 Nat
+  data Zahlen = Pos Nat
+              | Neg1 Nat
     deriving (Show, Eq)
   |]
 
@@ -139,8 +140,8 @@ singletons [d|
 
 singletons [d|
   instance Num Zahlen where
-    Neg1 m + Neg1 n = Neg1 (m + n + 1)
     Pos m + Pos n = Pos (m + n)
+    Neg1 m + Neg1 n = Neg1 (S (m + n))
     Neg1 m + Pos n = Pos n + Neg1 m
     Pos Z + Neg1 n = Neg1 n
     Pos (S m) + Neg1 Z = Pos m
@@ -154,7 +155,7 @@ singletons [d|
             Z    -> Pos Z
             S n' -> Neg1 (n * m + n')
         (Neg1 n, Pos m)  -> Pos m * Neg1 n
-        (Neg1 n, Neg1 m) -> Pos ((n + 1) * (m + 1))
+        (Neg1 n, Neg1 m) -> Pos ((S n) * (S m))
 
     abs (Pos n) = Pos n
     abs (Neg1 n) = Pos (S n)

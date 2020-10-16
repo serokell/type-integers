@@ -38,6 +38,7 @@ ghc-options:
   - -Wno-unused-matches
   - -Wno-unused-type-patterns
   - -Wno-unsafe
+  - -Wno-prepositive-qualified-module
 
 library:
   source-dirs: src
