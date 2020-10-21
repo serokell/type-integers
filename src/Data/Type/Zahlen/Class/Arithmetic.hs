@@ -35,17 +35,6 @@ sZero = SPos SZ
 
 -- Equality
 
--- TODO: Decide if necessary
---posInjective
---  :: forall n m. Pos n :~: Pos m
---  -> n :~: m
---posInjective Refl = Refl
---
---negInjective
---  :: forall n m. Neg n :~: Neg m
---  -> n :~: m
---negInjective Refl = Refl
-
 posLemma
   :: forall n m. n :~: m
   -> 'Pos n :~: 'Pos m
@@ -94,14 +83,6 @@ minusCongL Refl _ = Refl
 minusCongR :: forall (n :: Zahlen) (m :: Zahlen) (k :: Zahlen).
               Sing k -> n :~: m -> k - n :~: k - m
 minusCongR _ Refl = Refl
-
---plusCong'
---  :: forall (n :: Nat) (m :: Nat) (p :: Nat). Sing n
---  -> Sing m
---  -> Sing p
---  -> n + m :~: p
---  -> Pos n + Pos m :~: Pos p
---plusCong' n m p Refl = Refl
 
 negateNegate
   :: forall n. Sing (n :: Zahlen)
