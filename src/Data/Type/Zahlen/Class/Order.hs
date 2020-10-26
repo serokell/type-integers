@@ -6,7 +6,10 @@
 {-# LANGUAGE TypeInType          #-}
 {-# LANGUAGE TypeOperators       #-}
 
-module Data.Type.Zahlen.Class.Order where
+module Data.Type.Zahlen.Class.Order
+       ( leqReflexive, leqTrans, leqPosZNat, leqNegZNat, leqNatPosZ, leqNatNegZ
+       , antiSymmetry, totality
+       ) where
 
 import Data.Kind (Type)
 import Data.Type.Equality ((:~:) (..))
@@ -16,9 +19,9 @@ import Unsafe.Coerce
 import Data.Singletons.Prelude
 import Data.Singletons.Prelude.Enum
 import Data.Singletons.TH
-import Data.Type.Natural
-import Data.Type.Natural.Class.Arithmetic
-import Data.Type.Natural.Class.Order (leqAntisymm, leqRefl, leqTrans)
+import qualified Data.Type.Natural as Nat
+import qualified Data.Type.Natural.Class.Arithmetic as Nat
+import qualified Data.Type.Natural.Class.Order as Nat
 import Proof.Propositional
 
 -- TODO: Remove comment
@@ -36,8 +39,14 @@ import Data.Type.Zahlen.Definitions
 --converseLeq
 --  :: forall m n. ZLeq (Pos m) (Pos n)
 --  -> IsTrue (m <= n)
---converseLeq (PosLeqPos witness) = witness
---
+--converseLeq (PosLeqPos witness) = undefined
+
+leqReflexive :: Sing (m :: Zahlen)
+             -> Sing (n :: Zahlen)
+             -> m :~: n
+             -> IsTrue (m <= n)
+leqReflexive = undefined
+
 --leqReflexive
 --  :: forall (m :: Zahlen) (n :: Zahlen). Sing m
 --  -> Sing n
@@ -47,7 +56,15 @@ import Data.Type.Zahlen.Definitions
 --  case m of
 --    SPos n -> PosLeqPos $ leqRefl n
 --    SNeg n -> NegLeqNeg $ leqRefl n
---
+
+leqTrans :: Sing (m :: Zahlen)
+         -> Sing (n :: Zahlen)
+         -> Sing (p :: Zahlen)
+         -> IsTrue (m <= n)
+         -> IsTrue (n <= p)
+         -> IsTrue (m <= p)
+leqTrans = undefined
+
 --leqTransZ
 --  :: forall m n p. Sing m
 --  -> Sing n
@@ -78,7 +95,19 @@ import Data.Type.Zahlen.Definitions
 --leqNatZ sing1 sing2 isTr =
 --  case isTr of
 --    Witness -> Witness
---
+
+leqPosZNat :: Sing (Pos a :: Zahlen)
+       -> Sing (Pos b :: Zahlen)
+       -> IsTrue (Pos a <= Pos b)
+       -> IsTrue (a <= b)
+leqPosZNat = undefined
+
+leqNegZNat :: Sing (Neg1 a :: Zahlen)
+       -> Sing (Neg1 b :: Zahlen)
+       -> IsTrue (Neg1 a <= Neg1 b)
+       -> IsTrue (b <= a)
+leqNegZNat = undefined
+
 --leqNatZNeg
 --  :: forall a b. Sing (Neg a)
 --  -> Sing (Neg b)
@@ -88,6 +117,11 @@ import Data.Type.Zahlen.Definitions
 --  case isTr of
 --    Witness -> Witness
 --
+leqNatPosZ :: Sing (Pos a :: Zahlen)
+           -> Sing (Pos b :: Zahlen)
+           -> IsTrue (a <= b)
+           -> IsTrue (Pos a <= Pos b)
+leqNatPosZ = undefined
 --leqNatZConv
 --  :: forall a b. Sing (Pos a)
 --  -> Sing (Pos b)
@@ -96,7 +130,13 @@ import Data.Type.Zahlen.Definitions
 --leqNatZConv sing1 sing2 isTr =
 --  case isTr of
 --    Witness -> Witness
---
+
+leqNatNegZ :: Sing (Neg1 a :: Zahlen)
+           -> Sing (Neg1 b :: Zahlen)
+           -> IsTrue (a <= b)
+           -> IsTrue (Neg1 b <= Neg1 a)
+leqNatNegZ = undefined
+
 --leqNatZConvNeg
 --  :: forall a b. Sing (Neg a)
 --  -> Sing (Neg b)
@@ -137,7 +177,14 @@ import Data.Type.Zahlen.Definitions
 --    natS3 = zToNatNeg s3
 --    witness' = leqNatZNeg s2 s3 isTr2
 --    witness = leqNatZNeg s1 s2 isTr1
---
+
+antiSymmetry :: Sing (a :: Zahlen)
+             -> Sing (b :: Zahlen)
+             -> IsTrue (a <= b)
+             -> IsTrue (b <= a)
+             -> a :~: b
+antiSymmetry = undefined
+
 --antiSymmetry
 --  :: forall a b. Sing a
 --  -> Sing b
@@ -148,7 +195,12 @@ import Data.Type.Zahlen.Definitions
 --  negLemma $ leqAntisymm (zToNatNeg sing1) (zToNatNeg sing2) witness2 witness1
 --antiSymmetry sing1 sing2 (PosLeqPos witness1) (PosLeqPos witness2) =
 --  posLemma $ leqAntisymm (zToNat sing1) (zToNat sing2) witness1 witness2
---
+
+totality :: Sing (a :: Zahlen)
+         -> Sing (b :: Zahlen)
+         -> Either (IsTrue (a <= b)) (IsTrue (b <= a))
+totality = undefined
+
 --totality
 --  :: forall a b. Sing a
 --  -> Sing b

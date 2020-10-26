@@ -12,7 +12,5 @@ import Data.Type.Natural (Nat (..), SNat (..))
 import qualified Data.Type.Natural.Class.Arithmetic as Nat
 import Data.Typeable
 
-import Data.Type.Zahlen.Class.Arithmetic
-
 main :: IO ()
 main = putStrLn "Hello, World!\n"

@@ -8,14 +8,18 @@
 {-# LANGUAGE LambdaCase          #-}
 
 module Data.Type.Zahlen.Class.Arithmetic
-       ( plusCong, plusCongL, plusCongR
+       ( Zero, One, sZero, sOne
+       , plusCong, plusCongL, plusCongR
        , multCong, multCongL, multCongR
        , minusCong, minusCongL, minusCongR
-       , zeroIdL, zeroIdR, negateNegate, absIdem
-       , plusComm, plusAssoc
+       , plusZeroL, plusZeroR
+       , multZeroL, multZeroR, multOneL, multOneR
+       , negateNegate, absIdem
+       , plusComm, plusAssoc, plusMultDistrib, multPlusDistrib
+       , multComm, multAssoc
        ) where
 
-import Data.Singletons.Prelude (type (*), type (+), type (-), Abs, Negate, Sing, (%+))
+import Data.Singletons.Prelude (type (*), type (+), type (-), Abs, Negate, Sing, (%+), (%*), sNegate)
 import Data.Type.Natural (Nat (Z, S), SNat (SS, SZ))
 import qualified Data.Type.Natural.Class.Arithmetic as Nat
 import Data.Typeable ((:~:) (Refl))
@@ -26,12 +30,14 @@ import Unsafe.Coerce (unsafeCoerce)
 
 import Data.Type.Zahlen.Definitions (SZahlen (SNeg1, SPos), Zahlen (Neg1, Pos))
 
-
 type Zero = 'Pos 'Z
 type One  = 'Pos ('S 'Z)
 
-sOne = SPos (SS SZ)
+sZero :: Sing ('Pos 'Z)
 sZero = SPos SZ
+
+sOne :: Sing ('Pos ('S 'Z))
+sOne = SPos (SS SZ)
 
 -- Equality
 
@@ -97,19 +103,48 @@ absIdem
 absIdem (SPos n)  = Refl
 absIdem (SNeg1 n) = Refl
 
-zeroIdL
-  :: forall (m :: Zahlen). Sing m
-  -> 'Pos 'Z + m :~: m
-zeroIdL (SPos n)  = Refl
-zeroIdL (SNeg1 n) = Refl
+plusZeroL :: Sing (n :: Zahlen) -> 'Pos 'Z + n :~: n
+plusZeroL (SPos _)  = Refl
+plusZeroL (SNeg1 _) = Refl
 
-zeroIdR
-  :: forall (m :: Zahlen). Sing m
-  -> m + 'Pos 'Z :~: m
-zeroIdR sm = trans (plusComm sm (SPos SZ)) (zeroIdL sm)
+plusZeroR :: Sing (n :: Zahlen) -> n + 'Pos 'Z :~: n
+plusZeroR sm = trans (plusComm sm (SPos SZ)) (plusZeroL sm)
 
-plusComm :: Sing (n :: Zahlen) -> Sing (m :: Zahlen)
-         -> n + m :~: m + n
+multZeroL :: Sing (a :: Zahlen) -> Zero * a :~: Zero
+multZeroL (SPos sn)  =
+    start (sZero %* (SPos sn))
+    === SPos (SZ %* sn) `because` Refl
+    === sZero `because` cong (Proxy :: Proxy 'Pos) (Nat.multZeroL sn)
+multZeroL (SNeg1 sn) = Refl
+
+multZeroR :: Sing (a :: Zahlen) -> a * Zero :~: Zero
+multZeroR sa = trans (multComm sa sZero) (multZeroL sa) 
+
+multOneL :: Sing (a :: Zahlen) -> One * a :~: a
+multOneL (SPos sn) =
+    start (sOne %* (SPos sn))
+    === SPos ((SS SZ) %* sn) `because` Refl
+    === SPos sn `because` cong (Proxy :: Proxy 'Pos) (Nat.multOneL sn)
+multOneL (SNeg1 sn) =
+    start (sOne %* (SNeg1 sn))
+    === SNeg1 (SZ %* sn %+ SZ %+ sn) `because` Refl
+    === SNeg1 (SZ %+ SZ %+ sn)
+        `because` (cong (Proxy :: Proxy 'Neg1) 
+                  $ flip Nat.plusCongL sn
+                  $ flip Nat.plusCongL SZ
+                  $ Nat.multZeroL sn)
+    === SNeg1 (SZ %+ sn)
+        `because` (cong (Proxy :: Proxy 'Neg1)
+                  $ flip Nat.plusCongL sn
+                  $ Nat.plusZeroL SZ)
+    === SNeg1 sn
+        `because` (cong (Proxy :: Proxy 'Neg1)
+                  $ Nat.plusZeroL sn)
+
+multOneR :: Sing (a :: Zahlen) -> a * One :~: a
+multOneR sa = trans (multComm sa sOne) (multOneL sa)
+
+plusComm :: Sing (n :: Zahlen) -> Sing (m :: Zahlen) -> n + m :~: m + n
 plusComm (SPos a) (SPos b)   = posLemma (Nat.plusComm a b)
 plusComm (SNeg1 a) (SNeg1 b) = cong (Proxy :: Proxy 'Neg1)
                              $ cong (Proxy :: Proxy 'S)
@@ -117,8 +152,185 @@ plusComm (SNeg1 a) (SNeg1 b) = cong (Proxy :: Proxy 'Neg1)
 plusComm (SPos a) (SNeg1 b)  = Refl
 plusComm (SNeg1 a) (SPos b)  = Refl
 
+multComm :: Sing (a :: Zahlen) -> Sing (b :: Zahlen) -> a * b :~: b * a
+multComm (SPos sn) (SPos sm) = posLemma (Nat.multComm sn sm)
+multComm (SNeg1 sn) (SPos sm) = Refl
+multComm (SPos sn) (SNeg1 sm) = Refl
+multComm (SNeg1 sn) (SNeg1 sm) = posLemma (Nat.multComm (SS sn) (SS sm))
+
+negatePlusDistrib :: Sing (a :: Zahlen)
+                  -> Sing (b :: Zahlen)
+                  -> Negate (a + b) :~: Negate a + Negate b
+negatePlusDistrib sa sb = undefined
+
+negateNegOneMult :: Sing (a :: Zahlen)
+                 -> Negate a :~: 'Neg1 'Z * a
+negateNegOneMult sa = undefined
+
+negateMultL :: Sing (a :: Zahlen)
+            -> Sing (b :: Zahlen)
+            -> Negate (a * b) :~: (Negate a) * b
+negateMultL = undefined
+
+negateMultR :: Sing (a :: Zahlen)
+            -> Sing (b :: Zahlen)
+            -> Negate (a * b) :~: a * (Negate b)
+negateMultR = undefined
+
+plusMultDistrib :: Sing (a :: Zahlen)
+                -> Sing (b :: Zahlen)
+                -> Sing (c :: Zahlen)
+                -> (a + b) * c :~: (a * c) + (b * c)
+plusMultDistrib sa sb sc =
+    start ((sa %+ sb) %* sc)
+    === sc %* (sa %+ sb) `because` multComm (sa %+ sb) sc
+    === sc %* sa %+ sc %* sb `because` multPlusDistrib sc sa sb
+    === sa %* sc %+ sb %* sc
+        `because` plusCong (multComm sc sa) (multComm sc sb)
+
+multPlusDistrib :: Sing (a :: Zahlen)
+                -> Sing (b :: Zahlen)
+                -> Sing (c :: Zahlen)
+                -> a * (b + c) :~: a * b + a * c
+multPlusDistrib sa sb sc = case sa of
+    SPos sn  -> multPlusDistribPos sn sb sc
+    SNeg1 sn -> multPlusDistribNeg sn sb sc
+
+multPlusDistribPos :: Sing (n :: Nat)
+                   -> Sing (a :: Zahlen)
+                   -> Sing (b :: Zahlen)
+                   -> 'Pos n * (a + b) :~: 'Pos n * a + 'Pos n * b
+multPlusDistribPos sn sa sb = case sn of
+    SZ    ->
+        start (sZero %* (sa %+ sb))
+        === sZero `because` multZeroL (sa %+ sb)
+        === sZero %+ sZero `because` plusZeroL sZero
+        === (sZero %* sa) %+ (sZero %* sb)
+            `because` plusCong (sym $ multZeroL sa) (sym $ multZeroL sb)
+    SS sp ->
+        start (SPos (SS sp) %* (sa %+ sb))
+        === SPos sp %* (sa %+ sb) %+ (sa %+ sb)
+            `because` multPosSucc sp (sa %+ sb)
+        === (SPos sp %* sa %+ SPos sp %* sb) %+ (sa %+ sb)
+            `because` plusCongL (multPlusDistribPos sp sa sb) (sa %+ sb)
+        === ((SPos sp %* sa %+ SPos sp %* sb) %+ sa) %+ sb
+            `because` sym (plusAssoc (SPos sp %* sa %+ SPos sp %* sb) sa sb)
+        === (SPos sp %* sa %+ (SPos sp %* sb %+ sa)) %+ sb
+            `because` (flip plusCongL sb
+                      $ plusAssoc (SPos sp %* sa) (SPos sp %* sb) sa)
+        === (SPos sp %* sa %+ (sa %+ SPos sp %* sb)) %+ sb
+            `because` (flip plusCongL sb 
+                      $ plusCongR (SPos sp %* sa)
+                      $ plusComm (SPos sp %* sb) sa)
+        === ((SPos sp %* sa %+ sa) %+ SPos sp %* sb) %+ sb
+            `because` (flip plusCongL sb 
+                      $ sym
+                      $ plusAssoc (SPos sp %* sa) sa (SPos sp %* sb))
+        === (SPos sp %* sa %+ sa) %+ (SPos sp %* sb %+ sb)
+            `because` plusAssoc (SPos sp %* sa %+ sa) (SPos sp %* sb) sb
+        === SPos (SS sp) %* sa %+ SPos (SS sp) %* sb
+            `because` plusCong (sym $ multPosSucc sp sa)
+                               (sym $ multPosSucc sp sb)
+
+multPlusDistribNeg :: Sing (n :: Nat)
+                   -> Sing (a :: Zahlen)
+                   -> Sing (b :: Zahlen)
+                   -> 'Neg1 n * (a + b) :~: 'Neg1 n * a + 'Neg1 n * b
+multPlusDistribNeg sn sa sb = case sn of
+    SZ    ->
+        start (SNeg1 SZ %* (sa %+ sb))
+        === sNegate (sa %+ sb) `because` (sym $ negateNegOneMult (sa %+ sb))
+        === sNegate sa %+ sNegate sb `because` (negatePlusDistrib sa sb)
+        === SNeg1 SZ %* sa %+ SNeg1 SZ %* sb
+            `because` plusCong (negateNegOneMult sa) (negateNegOneMult sb)
+    SS sp ->
+        start (SNeg1 (SS sp) %* (sa %+ sb))
+        === SNeg1 sp %* (sa %+ sb) %+ SNeg1 SZ %* (sa %+ sb)
+            `because` multNegSucc sp (sa %+ sb)
+        === (SNeg1 sp %* sa %+ SNeg1 sp %* sb) %+ (SNeg1 SZ %* sa %+ SNeg1 SZ %* sb)
+            `because` plusCong (multPlusDistribNeg sp sa sb)
+                               (multPlusDistribNeg SZ sa sb)
+        === SNeg1 sp %* sa %+ SNeg1 sp %* sb %+ SNeg1 SZ %* sa %+ SNeg1 SZ %* sb
+            `because` sym (plusAssoc (SNeg1 sp %* sa %+ SNeg1 sp %* sb)
+                                (SNeg1 SZ %* sa)
+                                (SNeg1 SZ %* sb))
+        === SNeg1 sp %* sa %+ (SNeg1 sp %* sb %+ SNeg1 SZ %* sa) %+ SNeg1 SZ %* sb
+            `because` (flip plusCongL (SNeg1 SZ %* sb)
+                      $ plusAssoc (SNeg1 sp %* sa)
+                                  (SNeg1 sp %* sb)
+                                  (SNeg1 SZ %* sa))
+        === SNeg1 sp %* sa %+ (SNeg1 SZ %* sa %+ SNeg1 sp %* sb) %+ SNeg1 SZ %* sb
+            `because` (flip plusCongL (SNeg1 SZ %* sb)
+                      $ plusCongR (SNeg1 sp %* sa)
+                      $ plusComm (SNeg1 sp %* sb) (SNeg1 SZ %* sa))
+        === SNeg1 sp %* sa %+ SNeg1 SZ %* sa %+ SNeg1 sp %* sb %+ SNeg1 SZ %* sb
+            `because` (flip plusCongL (SNeg1 SZ %* sb)
+                      $ sym
+                      $ plusAssoc (SNeg1 sp %* sa)
+                                  (SNeg1 SZ %* sa)
+                                  (SNeg1 sp %* sb))
+        === (SNeg1 sp %* sa %+ SNeg1 SZ %* sa) %+ (SNeg1 sp %* sb %+ SNeg1 SZ %* sb)
+            `because` plusAssoc (SNeg1 sp %* sa %+ SNeg1 SZ %* sa)
+                                (SNeg1 sp %* sb)
+                                (SNeg1 SZ %* sb)
+        === SNeg1 (SS sp) %* sa %+ SNeg1 (SS sp) %* sb
+            `because` plusCong (sym $ multNegSucc sp sa)
+                               (sym $ multNegSucc sp sb)
+
+multPosSucc :: Sing (n :: Nat)
+            -> Sing (a :: Zahlen)
+            -> 'Pos ('S n) * a :~: 'Pos n * a + a
+multPosSucc sn (SPos sm) =
+    start (SPos (SS sn) %* (SPos sm))
+    === SPos ((SS sn) %* sm) `because` Refl
+    === SPos (sn %* sm %+ sm) `because` Refl
+    === SPos (sn %* sm) %+ SPos sm `because` Refl
+    === SPos sn %* SPos sm %+ SPos sm `because` Refl
+multPosSucc SZ (SNeg1 sm) =
+    start (SPos (SS SZ) %* (SNeg1 sm))
+    === SNeg1 sm `because` multOneL (SNeg1 sm)
+    === sZero %+ SNeg1 sm `because` plusZeroL (SNeg1 sm)
+    === sZero %* SNeg1 sm %+ SNeg1 sm
+        `because` plusCongL (sym $ multZeroL (SNeg1 sm)) (SNeg1 sm)
+multPosSucc (SS sn) (SNeg1 sm) =
+    start (SPos (SS (SS sn)) %* SNeg1 sm)
+    === SNeg1 (SS sn %* sm %+ SS sn %+ sm) `because` Refl
+    === SNeg1 (sn %* sm %+ sm %+ SS sn %+ sm) `because` Refl
+    === SNeg1 (SS (sn %* sm %+ sm %+ sn) %+ sm)
+        `because` (cong (Proxy :: Proxy 'Neg1)
+                  $ flip Nat.plusCongL sm
+                  $ Nat.plusSuccR (sn %* sm %+ sm) sn)
+    === SNeg1 (SS (sn %* sm %+ sm %+ sn %+ sm))
+        `because` (cong (Proxy :: Proxy 'Neg1)
+                  $ Nat.plusSuccL (sn %* sm %+ sm %+ sn) sm)
+    === SNeg1 (SS (sn %* sm %+ (sm %+ sn) %+ sm))
+        `because` (cong (Proxy :: Proxy 'Neg1)
+                  $ cong (Proxy :: Proxy 'S)
+                  $ flip Nat.plusCongL sm
+                  $ Nat.plusAssoc (sn %* sm) sm sn)
+    === SNeg1 (SS (sn %* sm %+ (sn %+ sm) %+ sm))
+        `because` (cong (Proxy :: Proxy 'Neg1)
+                  $ cong (Proxy :: Proxy 'S)
+                  $ flip Nat.plusCongL sm
+                  $ Nat.plusCongR (sn %* sm)
+                  $ Nat.plusComm sm sn
+                  )
+    === SNeg1 (SS (sn %* sm %+ sn %+ sm %+ sm))
+        `because` (cong (Proxy :: Proxy 'Neg1)
+                  $ cong (Proxy :: Proxy 'S)
+                  $ flip Nat.plusCongL sm
+                  $ sym $ Nat.plusAssoc (sn %* sm) sn sm
+                  )
+    === SNeg1 (sn %* sm %+ sn %+ sm) %+ SNeg1 sm `because` Refl
+    === SPos (SS sn) %* SNeg1 sm %+ SNeg1 sm `because` Refl
+
+multNegSucc :: Sing (n :: Nat)
+            -> Sing (a :: Zahlen)
+            -> 'Neg1 ('S n) * a :~: 'Neg1 n * a + 'Neg1 'Z * a
+multNegSucc sn sa = undefined
+
 {-
-   ASSOCIATIVITY
+   ASSOCIATIVITY OF ADDITION
 -}
 plusAssoc :: Sing (a :: Zahlen)
           -> Sing (b :: Zahlen)
@@ -134,8 +346,8 @@ plusAssocPos :: Sing (a :: Zahlen)
              -> (a + b) + 'Pos n :~: a + (b + 'Pos n)
 plusAssocPos sa sb SZ =
     start ((sa %+ sb) %+ sZero)
-    === sa %+ sb `because` zeroIdR (sa %+ sb)
-    === sa %+ (sb %+ sZero) `because` plusCongR sa (sym (zeroIdR sb))
+    === sa %+ sb `because` plusZeroR (sa %+ sb)
+    === sa %+ (sb %+ sZero) `because` plusCongR sa (sym (plusZeroR sb))
 plusAssocPos sa sb (SS sn) =
     start ((sa %+ sb) %+ SPos (SS sn))
     === ((sa %+ sb) %+ (SPos sn %+ sOne))
@@ -224,13 +436,13 @@ plusAssocOne sa sb = case (sa, sb) of
                    -> ('Pos n + 'Neg1 m) + One :~: 'Pos n + ('Neg1 m + One)
     plusAssocOnePN SZ sm =
         start ((sZero %+ SNeg1 sm) %+ sOne)
-          === SNeg1 sm %+ sOne `because` Nat.plusCongL (zeroIdL (SNeg1 sm)) sOne
-          === sZero %+ (SNeg1 sm %+ sOne) `because` (sym $ zeroIdL (SNeg1 sm %+ sOne))
+          === SNeg1 sm %+ sOne `because` Nat.plusCongL (plusZeroL (SNeg1 sm)) sOne
+          === sZero %+ (SNeg1 sm %+ sOne) `because` (sym $ plusZeroL (SNeg1 sm %+ sOne))
     plusAssocOnePN (SS sn) SZ =
         start ((SPos (SS sn) %+ SNeg1 SZ) %+ sOne)
         === SPos sn %+ sOne `because` plusCongL (lemma sn) sOne
         === SPos (SS sn) `because` sym (oneLemma sn)
-        === SPos (SS sn) %+ sZero `because` sym (zeroIdR (SPos (SS sn)))
+        === SPos (SS sn) %+ sZero `because` sym (plusZeroR (SPos (SS sn)))
         === SPos (SS sn) %+ (sOne %+ SNeg1 SZ)
             `because` plusCongR (SPos (SS sn)) (sym (lemma SZ))
         === SPos (SS sn) %+ (SNeg1 SZ %+ sOne)
@@ -247,11 +459,11 @@ plusAssocOne sa sb = case (sa, sb) of
         === SPos sn %+ sZero
             `because` plusCongR (SPos sn) lemma2
         === SPos sn
-            `because` zeroIdR (SPos sn)
+            `because` plusZeroR (SPos sn)
         === SPos (SS sn) %+ SNeg1 SZ
             `because` sym (lemma3 sn)
         === SPos (SS sn) %+ (sZero %+ SNeg1 SZ)
-            `because` plusCongR (SPos (SS sn)) (zeroIdL (SNeg1 SZ))
+            `because` plusCongR (SPos (SS sn)) (plusZeroL (SNeg1 SZ))
         === SPos (SS sn) %+ (sOne %+ SNeg1 (SS SZ))
             `because` plusCongR (SPos (SS sn)) (sym (lemma1 SZ))
         === SPos (SS sn) %+ (SNeg1 (SS SZ) %+ sOne)
@@ -272,10 +484,10 @@ plusAssocOne sa sb = case (sa, sb) of
         === SPos sn %+ (SNeg1 (SS sm) %+ sOne) `because` plusAssocOnePN sn (SS sm)
         === SPos sn %+ (sOne %+ SNeg1 (SS sm)) `because` Refl
         === SPos sn %+ (sZero %+ SNeg1 sm) `because` Refl
-        === SPos sn %+ SNeg1 sm `because` plusCongR (SPos sn) (zeroIdL (SNeg1 sm))
+        === SPos sn %+ SNeg1 sm `because` plusCongR (SPos sn) (plusZeroL (SNeg1 sm))
         === SPos (SS sn) %+ SNeg1 (SS sm) `because` Refl
         === SPos (SS sn) %+ (sZero %+ SNeg1 (SS sm))
-            `because` plusCongR (SPos (SS sn)) (zeroIdL (SNeg1 (SS sm)))
+            `because` plusCongR (SPos (SS sn)) (plusZeroL (SNeg1 (SS sm)))
         === SPos (SS sn) %+ (sOne %+ SNeg1 (SS (SS sm)))
             `because` plusCongR (SPos (SS sn)) (lemma (SS sm))
         === SPos (SS sn) %+ (SNeg1 (SS (SS sm)) %+ sOne)
@@ -304,7 +516,7 @@ plusAssocOne sa sb = case (sa, sb) of
                 === SPos sm %+ (sOne %+ SNeg1 SZ)
                     `because` plusCongR (SPos sm) (plusComm (SNeg1 SZ) sOne)
                 === SPos sm %+ sZero `because` Refl
-                === SPos sm `because` zeroIdR (SPos sm)
+                === SPos sm `because` plusZeroR (SPos sm)
                 === SPos (SS sm) %+ SNeg1 SZ `because` Refl
                 === SNeg1 SZ %+ SPos (SS sm)
                     `because` plusComm (SPos (SS sm)) (SNeg1 SZ)
@@ -314,7 +526,7 @@ plusAssocOne sa sb = case (sa, sb) of
                 start (SPos sm %+ (SNeg1 (SS sp) %+ sOne))
                 === SPos sm %+ (SNeg1 sp %+ sZero) `because` Refl
                 === SPos sm %+ SNeg1 sp
-                    `because` plusCongR (SPos sm) (zeroIdR (SNeg1 sp))
+                    `because` plusCongR (SPos sm) (plusZeroR (SNeg1 sp))
                 === SPos (SS sm) %+ SNeg1 (SS sp) `because` Refl
                 === SNeg1 (SS sp) %+ SPos (SS sm)
                     `because` plusComm (SPos (SS sm)) (SNeg1 (SS sp))
@@ -334,7 +546,7 @@ plusAssocOne sa sb = case (sa, sb) of
                 `because` Nat.plusCongL (lemma sn sm) sOne
             === sOne %+ SNeg1 (SS (sn %+ sm)) `because` Refl
             === sZero %+ SNeg1 (sn %+ sm) `because` Refl
-            === SNeg1 (sn %+ sm) `because` zeroIdL (SNeg1 (sn %+ sm))
+            === SNeg1 (sn %+ sm) `because` plusZeroL (SNeg1 (sn %+ sm))
           where
             lemma :: Sing (p :: Nat)
                   -> Sing (q :: Nat)
@@ -346,7 +558,7 @@ plusAssocOne sa sb = case (sa, sb) of
             SZ    ->
                 start (SNeg1 (sn %+ SZ))
                 === SNeg1 sn `because` cong (Proxy :: Proxy 'Neg1) (Nat.plusZeroR sn)
-                === SNeg1 sn %+ sZero `because` zeroIdR (SNeg1 sn)
+                === SNeg1 sn %+ sZero `because` plusZeroR (SNeg1 sn)
                 === SNeg1 sn %+ (sOne %+ SNeg1 SZ)
                     `because` plusCongR (SNeg1 sn) (Refl :: 'Pos 'Z :~: 'Pos ('S 'Z) + 'Neg1 'Z)
                 === SNeg1 sn %+ (SNeg1 SZ %+ sOne)
@@ -358,7 +570,7 @@ plusAssocOne sa sb = case (sa, sb) of
                 === SNeg1 sn %+ SNeg1 sp
                     `because` Refl
                 === SNeg1 sn %+ (sZero %+ SNeg1 sp)
-                    `because` plusCongR (SNeg1 sn) (zeroIdL (SNeg1 sp))
+                    `because` plusCongR (SNeg1 sn) (plusZeroL (SNeg1 sp))
                 === SNeg1 sn %+ (sOne %+ SNeg1 (SS sp))
                     `because` plusCongR (SNeg1 sn) (lemma SZ sp)
                 === SNeg1 sn %+ (SNeg1 (SS sp) %+ sOne)
@@ -384,9 +596,9 @@ plusAssocNegOne sa sb = case (sa, sb) of
     plusAssocNegOnePP sn SZ =
         start ((SPos sn %+ sZero) %+ SNeg1 SZ)
         === SPos sn %+ SNeg1 SZ
-            `because` plusCongL (zeroIdR (SPos sn)) (SNeg1 SZ)
+            `because` plusCongL (plusZeroR (SPos sn)) (SNeg1 SZ)
         === SPos sn %+ (sZero %+ SNeg1 SZ)
-            `because` plusCongR (SPos sn) (zeroIdL (SNeg1 SZ))
+            `because` plusCongR (SPos sn) (plusZeroL (SNeg1 SZ))
     plusAssocNegOnePP sn (SS sm) =
         start ((SPos sn %+ SPos (SS sm)) %+ SNeg1 SZ)
         === SPos (sn %+ SS sm) %+ SNeg1 SZ `because` plusCongL (lemma1 sn sm) (SNeg1 SZ)
@@ -410,8 +622,8 @@ plusAssocNegOne sa sb = case (sa, sb) of
                       -> ('Pos n + 'Neg1 m) + 'Neg1 'Z :~: 'Pos n + ('Neg1 m + 'Neg1 'Z)
     plusAssocNegOnePN SZ sm =
         start ((SPos SZ %+ SNeg1 sm) %+ SNeg1 SZ)
-        === SNeg1 sm %+ SNeg1 SZ `because` plusCongL (zeroIdL (SNeg1 sm)) (SNeg1 SZ)
-        === SPos SZ %+ (SNeg1 sm %+ SNeg1 SZ) `because` zeroIdL (SNeg1 sm %+ SNeg1 SZ)
+        === SNeg1 sm %+ SNeg1 SZ `because` plusCongL (plusZeroL (SNeg1 sm)) (SNeg1 SZ)
+        === SPos SZ %+ (SNeg1 sm %+ SNeg1 SZ) `because` plusZeroL (SNeg1 sm %+ SNeg1 SZ)
     plusAssocNegOnePN (SS sn) SZ =
         start ((SPos (SS sn) %+ SNeg1 SZ) %+ SNeg1 SZ)
         === SPos sn %+ SNeg1 SZ `because` plusCongL (lemma1 sn) (SNeg1 SZ)
@@ -503,7 +715,14 @@ plusAssocNegOne sa sb = case (sa, sb) of
                -> 'Neg1 ('S a) :~: 'Neg1 ('S b)
         lemma2 = cong (Proxy :: Proxy 'Neg1) . cong (Proxy :: Proxy 'S)
 
-
+{-
+   ASSOCIATIVITY OF MULTIPLICATION
+-}
+multAssoc :: Sing (a :: Zahlen)
+          -> Sing (b :: Zahlen)
+          -> Sing (c :: Zahlen)
+          -> (a * b) * c :~: a * (b * c)
+multAssoc = undefined
 
 --class IsCommutativeRing z where
 --  type Zero' :: z

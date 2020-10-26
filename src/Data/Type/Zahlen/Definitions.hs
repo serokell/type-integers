@@ -147,15 +147,11 @@ singletons [d|
     Pos (S m) + Neg1 Z = Pos m
     Pos (S m) + Neg1 (S n) = Pos m + Neg1 n
 
-    a * b =
-      case (a, b) of
-        (Pos n,  Pos m)  -> Pos (n * m)
-        (Pos n,  Neg1 m) ->
-          case n of
-            Z    -> Pos Z
-            S n' -> Neg1 (n * m + n')
-        (Neg1 n, Pos m)  -> Pos m * Neg1 n
-        (Neg1 n, Neg1 m) -> Pos ((S n) * (S m))
+    Pos n * Pos m      = Pos (n * m)
+    Pos Z * Neg1 m     = Pos Z
+    Pos (S n) * Neg1 m = Neg1 (n * m + n + m)
+    Neg1 n * Pos m     = Pos m * Neg1 n
+    Neg1 n * Neg1 m    = Pos ((S n) * (S m))
 
     abs (Pos n) = Pos n
     abs (Neg1 n) = Pos (S n)
