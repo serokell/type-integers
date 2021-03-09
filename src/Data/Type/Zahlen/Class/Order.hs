@@ -11,17 +11,17 @@ module Data.Type.Zahlen.Class.Order
        , antiSymmetry, totality
        ) where
 
-import Data.Kind (Type)
-import Data.Type.Equality ((:~:) (..))
+-- import Data.Kind (Type)
+-- import Data.Type.Equality ((:~:) (..))
 import Data.Typeable
-import Unsafe.Coerce
+-- import Unsafe.Coerce
 
 import Data.Singletons.Prelude
-import Data.Singletons.Prelude.Enum
-import Data.Singletons.TH
-import qualified Data.Type.Natural as Nat
-import qualified Data.Type.Natural.Class.Arithmetic as Nat
-import qualified Data.Type.Natural.Class.Order as Nat
+--import Data.Singletons.Prelude.Enum
+--import Data.Singletons.TH
+--import qualified Data.Type.Natural as Nat
+--import qualified Data.Type.Natural.Class.Arithmetic as Nat
+--import qualified Data.Type.Natural.Class.Order as Nat
 import Proof.Propositional
 
 -- TODO: Remove comment
@@ -96,16 +96,16 @@ leqTrans = undefined
 --  case isTr of
 --    Witness -> Witness
 
-leqPosZNat :: Sing (Pos a :: Zahlen)
-       -> Sing (Pos b :: Zahlen)
-       -> IsTrue (Pos a <= Pos b)
-       -> IsTrue (a <= b)
+leqPosZNat :: Sing ('Pos a :: Zahlen)
+           -> Sing ('Pos b :: Zahlen)
+           -> IsTrue ('Pos a <= 'Pos b)
+           -> IsTrue (a <= b)
 leqPosZNat = undefined
 
-leqNegZNat :: Sing (Neg1 a :: Zahlen)
-       -> Sing (Neg1 b :: Zahlen)
-       -> IsTrue (Neg1 a <= Neg1 b)
-       -> IsTrue (b <= a)
+leqNegZNat :: Sing ('Neg1 a :: Zahlen)
+           -> Sing ('Neg1 b :: Zahlen)
+           -> IsTrue ('Neg1 a <= 'Neg1 b)
+           -> IsTrue (b <= a)
 leqNegZNat = undefined
 
 --leqNatZNeg
@@ -117,10 +117,10 @@ leqNegZNat = undefined
 --  case isTr of
 --    Witness -> Witness
 --
-leqNatPosZ :: Sing (Pos a :: Zahlen)
-           -> Sing (Pos b :: Zahlen)
+leqNatPosZ :: Sing ('Pos a :: Zahlen)
+           -> Sing ('Pos b :: Zahlen)
            -> IsTrue (a <= b)
-           -> IsTrue (Pos a <= Pos b)
+           -> IsTrue ('Pos a <= 'Pos b)
 leqNatPosZ = undefined
 --leqNatZConv
 --  :: forall a b. Sing (Pos a)
@@ -131,10 +131,10 @@ leqNatPosZ = undefined
 --  case isTr of
 --    Witness -> Witness
 
-leqNatNegZ :: Sing (Neg1 a :: Zahlen)
-           -> Sing (Neg1 b :: Zahlen)
+leqNatNegZ :: Sing ('Neg1 a :: Zahlen)
+           -> Sing ('Neg1 b :: Zahlen)
            -> IsTrue (a <= b)
-           -> IsTrue (Neg1 b <= Neg1 a)
+           -> IsTrue ('Neg1 b <= 'Neg1 a)
 leqNatNegZ = undefined
 
 --leqNatZConvNeg

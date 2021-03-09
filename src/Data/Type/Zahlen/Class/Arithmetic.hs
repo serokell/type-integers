@@ -26,7 +26,7 @@ import Data.Typeable ((:~:) (Refl))
 import Proof.Equational (trans, cong, start, (===), because, sym)
 import Data.Proxy (Proxy (Proxy))
 
-import Unsafe.Coerce (unsafeCoerce)
+--import Unsafe.Coerce (unsafeCoerce)
 
 import Data.Type.Zahlen.Definitions (SZahlen (SNeg1, SPos), Zahlen (Neg1, Pos))
 
@@ -46,10 +46,10 @@ posLemma
   -> 'Pos n :~: 'Pos m
 posLemma Refl = Refl
 
-negLemma
-  :: forall n m. n :~: m
-  -> 'Neg1 n :~: 'Neg1 m
-negLemma Refl = Refl
+--negLemma
+--  :: forall n m. n :~: m
+--  -> 'Neg1 n :~: 'Neg1 m
+--negLemma Refl = Refl
 
 plusCong
   :: forall (n :: Zahlen) (m :: Zahlen) (n' :: Zahlen) (m' :: Zahlen).
@@ -167,15 +167,15 @@ negateNegOneMult :: Sing (a :: Zahlen)
                  -> Negate a :~: 'Neg1 'Z * a
 negateNegOneMult sa = undefined
 
-negateMultL :: Sing (a :: Zahlen)
-            -> Sing (b :: Zahlen)
-            -> Negate (a * b) :~: (Negate a) * b
-negateMultL = undefined
-
-negateMultR :: Sing (a :: Zahlen)
-            -> Sing (b :: Zahlen)
-            -> Negate (a * b) :~: a * (Negate b)
-negateMultR = undefined
+--negateMultL :: Sing (a :: Zahlen)
+--            -> Sing (b :: Zahlen)
+--            -> Negate (a * b) :~: (Negate a) * b
+--negateMultL = undefined
+--
+--negateMultR :: Sing (a :: Zahlen)
+--            -> Sing (b :: Zahlen)
+--            -> Negate (a * b) :~: a * (Negate b)
+--negateMultR = undefined
 
 plusMultDistrib :: Sing (a :: Zahlen)
                 -> Sing (b :: Zahlen)
@@ -420,16 +420,16 @@ plusAssocOne sa sb = case (sa, sb) of
                    -> ('Pos n + 'Pos m) + One :~: 'Pos n + ('Pos m + One)
     plusAssocOnePP sn sm =
         start ((SPos sn %+ SPos sm) %+ sOne)
-        === SPos (sn %+ sm) %+ sOne `because` Nat.plusCongL (posLemma sn sm) sOne
+        === SPos (sn %+ sm) %+ sOne `because` Nat.plusCongL (posLemma' sn sm) sOne
         === SPos (sn %+ sm %+ SS SZ) `because` Refl
         === SPos (sn %+ (sm %+ SS SZ))
             `because` cong (Proxy :: Proxy 'Pos) (Nat.plusAssoc sn sm (SS SZ))
-        === SPos sn %+ SPos (sm %+ SS SZ) `because` (sym $ posLemma sn (sm %+ SS SZ))
+        === SPos sn %+ SPos (sm %+ SS SZ) `because` (sym $ posLemma' sn (sm %+ SS SZ))
         === SPos sn %+ (SPos sm %+ sOne)
-            `because` Nat.plusCongR (SPos sn) (sym $ posLemma sm (SS SZ))
+            `because` Nat.plusCongR (SPos sn) (sym $ posLemma' sm (SS SZ))
       where
-        posLemma :: Sing (p :: Nat) -> Sing (q :: Nat) -> 'Pos p + 'Pos q :~: 'Pos (p + q)
-        posLemma _ _ = Refl
+        posLemma' :: Sing (p :: Nat) -> Sing (q :: Nat) -> 'Pos p + 'Pos q :~: 'Pos (p + q)
+        posLemma' _ _ = Refl
 
     plusAssocOnePN :: Sing (n :: Nat)
                    -> Sing (m :: Nat)
@@ -550,7 +550,7 @@ plusAssocOne sa sb = case (sa, sb) of
           where
             lemma :: Sing (p :: Nat)
                   -> Sing (q :: Nat)
-                  -> 'Neg1 p + 'Neg1 q :~: 'Neg1 (S (p + q))
+                  -> 'Neg1 p + 'Neg1 q :~: 'Neg1 ('S (p + q))
             lemma _ _ = Refl
 
         part2 :: 'Neg1 (n + m) :~: 'Neg1 n + ('Neg1 m + One)

@@ -36,8 +36,10 @@ ghc-options:
   - -Wno-missing-export-lists
   - -Wno-missing-deriving-strategies
   - -Wno-unused-matches
+  - -Wno-unused-packages
   - -Wno-unused-type-patterns
   - -Wno-unsafe
+  - -Wno-safe
   - -Wno-prepositive-qualified-module
 
 library:
