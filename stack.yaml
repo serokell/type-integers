@@ -17,7 +17,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: nightly-2021-01-17
+resolver: lts-17.5
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -34,10 +34,10 @@ packages:
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:
 #
-# extra-deps:
-# - acme-missiles-0.3
-# - git: https://github.com/commercialhaskell/stack.git
-#   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
+extra-deps:
+ - type-natural-0.9.0.0
+ - ghc-typelits-presburger-0.4.0.0@sha256:90f1c1607a867ebd87a83f8aaa963ea208e1b968e852603efa9b7349a422814b,3203
+ - singletons-presburger-0.4.0.0@sha256:155aa8f21071513808a44f091d85fc396d66964001390a3bda4f62503d4164ee,2198
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
